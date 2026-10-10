@@ -6,13 +6,14 @@ export const auth = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
 	}),
+	trustedOrigins: ["http://localhost:3000", "http://localhost:5173"],
 	user: {
 		additionalFields: {
 			role: {
-				type: "string",
-				required: false,
+				type: ["OWNER", "STAFF", "BUYER"] as const,
+				required: true,
 				defaultValue: "BUYER",
-				input: false, // Mencegah buyer set role sendiri saat sign-up
+				input: false,
 			},
 			contact: {
 				type: "string",

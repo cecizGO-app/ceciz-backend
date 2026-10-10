@@ -39,6 +39,7 @@
 
     // Recommended Options
     "strict": true,
+    "strictNullChecks" :true,
     "jsx": "react-jsx",
     "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true,
