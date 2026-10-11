@@ -110,10 +110,10 @@ model User {
   role          Role      @default(BUYER)
   contact       String?
   address       String?
+  idLine        String? 
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
   sessions      Session[]
   accounts      Account[]
 

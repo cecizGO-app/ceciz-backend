@@ -28,6 +28,10 @@ export const auth = betterAuth({
 				required: false,
 				defaultValue: true,
 			},
+			idLine: {
+				type: "string",
+				required: false,
+			},
 		},
 	},
 	socialProviders: {
