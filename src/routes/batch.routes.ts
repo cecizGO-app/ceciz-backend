@@ -4,6 +4,7 @@ import {
 	patchBatch,
 	getBatch,
 	getBatchId,
+	deleteBatchId,
 } from "@/controllers/batch.controller";
 import { requireAuth } from "@/middleware/requireAuth";
 import { requireRole } from "@/middleware/requireRole";
@@ -36,6 +37,13 @@ router.get(
 	requireAuth,
 	requireRole(["OWNER", "STAFF"]),
 	getBatchId,
+);
+
+router.delete(
+	"/api/v1/admin/batches/:id",
+	requireAuth,
+	requireRole(["OWNER", "STAFF"]),
+	deleteBatchId,
 );
 
 export default router;

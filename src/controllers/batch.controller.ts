@@ -197,6 +197,7 @@ export const getBatchId = async (req: Request, res: Response) => {
 				message: "ID batch wajib disertakan dan harus valid",
 			});
 		}
+
 		const batchId = await prisma.batch.findUnique({
 			where: { id },
 			include: {
@@ -225,6 +226,69 @@ export const getBatchId = async (req: Request, res: Response) => {
 			data: batchId,
 		});
 	} catch {
+		return res.status(500).json({
+			success: false,
+			message: "Interval Server Error",
+		});
+	}
+};
+
+export const deleteBatchId = async (req: Request, res: Response) => {
+	try {
+		const { id } = req.params;
+
+		if (!id || typeof id !== "string") {
+			return res.status(400).json({
+				success: false,
+				message: "ID batch wajib disertakan dan harus valid",
+			});
+		}
+
+		const existingBatch = await prisma.batch.findUnique({
+			where: { id },
+			include: {
+				_count: {
+					select: {
+						items: true,
+						orders: true,
+					},
+				},
+			},
+		});
+
+		if (!existingBatch) {
+			return res.status(404).json({
+				success: false,
+				message: "Data tidak ditemukan",
+			});
+		}
+
+		if (existingBatch._count.items > 0 || existingBatch._count.orders > 0) {
+			return res.status(400).json({
+				success: false,
+				message:
+					"Batch tidak dapat dihapus karena sudah ada pesanan. Silahkan ubah status menjadi CLOSED atau ARCHIVED.",
+			});
+		}
+
+		await prisma.batch.delete({
+			where: { id },
+		});
+
+		return res.status(200).json({
+			success: true,
+			message: "Batch berhasil dihapus",
+		});
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError) {
+			if (error.code === "P2025") {
+				return res.status(404).json({
+					success: false,
+					message: "Batch tidak ditemukan",
+				});
+			}
+		}
+
 		return res.status(500).json({
 			success: false,
 			message: "Interval Server Error",
