@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from "express";
 import type { Role } from "@/generated/prisma/enums";
 
 export const requireRole = (allowedRoles: Role[]) => {
