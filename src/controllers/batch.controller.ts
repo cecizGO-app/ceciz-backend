@@ -113,12 +113,13 @@ export const patchBatch = async (req: Request, res: Response) => {
                         message: "Batch dengan ID tersebut tidak ditemukan",
                     });
                 }
-        }
-        if (error === "P2002") {
-            return res.status(409).json({
-                success: false,
-                message: "Nomor batch untuk negara tersebut sudah terpakai",
-            });
+                
+                if (error.code === "P2002") {
+                    return res.status(409).json({
+                        success: false,
+                        message: "Nomor batch untuk negara tersebut sudah terpakai",
+                    });
+                }
         }
         return res.status(500).json({
             success: false,
