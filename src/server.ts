@@ -17,9 +17,9 @@ app.use(
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 
-app.use(batchRouter);
-
 app.use(express.json());
+
+app.use(batchRouter);
 
 app.listen(port, () => {
 	console.log(`Example app listening on port ${port}`);

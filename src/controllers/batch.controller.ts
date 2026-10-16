@@ -185,7 +185,7 @@ export const getBatch = async (req: Request, res: Response) => {
 	} catch {
 		return res.status(500).json({
 			success: false,
-			messgae: "Internal Server Error",
+			message: "Internal Server Error",
 		});
 	}
 };
@@ -232,7 +232,7 @@ export const getBatchId = async (req: Request, res: Response) => {
 	} catch {
 		return res.status(500).json({
 			success: false,
-			message: "Interval Server Error",
+			message: "Internal Server Error",
 		});
 	}
 };
@@ -296,7 +296,7 @@ export const deleteBatchId = async (req: Request, res: Response) => {
 
 		return res.status(500).json({
 			success: false,
-			message: "Interval Server Error",
+			message: "Internal Server Error",
 		});
 	}
 };
