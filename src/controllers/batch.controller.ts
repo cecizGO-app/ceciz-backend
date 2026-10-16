@@ -1,9 +1,12 @@
 import type { Request, Response } from "express";
 import { ZodError } from "zod";
-import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { createBatchSchema, updateBatchSchema } from "@/schemas/batch.schema";
-import type { CountryCode, BatchStatus } from "@/generated/prisma/enums";
+import { prisma } from "@/lib/prisma";
+import {
+	createBatchSchema,
+	getBatchQuerySchema,
+	updateBatchSchema,
+} from "@/schemas/batch.schema";
 
 // Create Batch Admin
 export const createBatch = async (req: Request, res: Response) => {
@@ -65,17 +68,17 @@ export const patchBatch = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params;
 
-		if (!id) {
+		if (!id || typeof id !== "string") {
 			return res.status(400).json({
 				success: false,
-				message: "ID batch wajib disertakan",
+				message: "ID batch wajib disertakan dan harus valid",
 			});
 		}
 
 		const validatedData = updateBatchSchema.parse(req.body);
 
 		const updatedBatch = await prisma.batch.update({
-			where: { id: id as string },
+			where: { id },
 			data: {
 				...(validatedData.countryCode && {
 					countryCode: validatedData.countryCode,
@@ -90,9 +93,15 @@ export const patchBatch = async (req: Request, res: Response) => {
 				...(validatedData.shippingFee !== undefined && {
 					shippingFee: validatedData.shippingFee,
 				}),
-				...(validatedData.feeGo  !== undefined && { feeGo: validatedData.feeGo }),
-				...(validatedData.feeRekap  !== undefined && { feeRekap: validatedData.feeRekap }),
-				...(validatedData.feeNyelem  !== undefined && { feeNyelem: validatedData.feeNyelem }),
+				...(validatedData.feeGo !== undefined && {
+					feeGo: validatedData.feeGo,
+				}),
+				...(validatedData.feeRekap !== undefined && {
+					feeRekap: validatedData.feeRekap,
+				}),
+				...(validatedData.feeNyelem !== undefined && {
+					feeNyelem: validatedData.feeNyelem,
+				}),
 				...(validatedData.rateHarian !== undefined && {
 					rateHarian: validatedData.rateHarian,
 				}),
@@ -145,7 +154,7 @@ export const patchBatch = async (req: Request, res: Response) => {
 		}
 		return res.status(500).json({
 			success: false,
-			message: "Internal server error",
+			message: "Internal Server Error",
 		});
 	}
 };
@@ -153,12 +162,12 @@ export const patchBatch = async (req: Request, res: Response) => {
 //Get Batch Admin
 export const getBatch = async (req: Request, res: Response) => {
 	try {
-		const { countryCode, status } = req.query;
+		const query = getBatchQuerySchema.parse(req.query);
 
 		const batches = await prisma.batch.findMany({
 			where: {
-				...(countryCode && { countryCode: countryCode as CountryCode }),
-				...(status && { status: status as BatchStatus }),
+				...(query.countryCode && { countryCode: query.countryCode }),
+				...(query.status && { status: query.status }),
 			},
 			orderBy: {
 				createdAt: "desc",
@@ -183,7 +192,19 @@ export const getBatch = async (req: Request, res: Response) => {
 			message: "Berhasil mengambil daftar batch",
 			data: batches,
 		});
-	} catch {
+	} catch (error) {
+		if (error instanceof ZodError) {
+			return res.status(400).json({
+				success: false,
+				message: "Query parameter tidak valid",
+				errors: error.issues.map((err) => ({
+					field: err.path.join("."),
+					message: err.message,
+				})),
+			});
+		}
+
+		console.error("Error getBatch:", error);
 		return res.status(500).json({
 			success: false,
 			message: "Internal Server Error",
@@ -227,7 +248,7 @@ export const getBatchId = async (req: Request, res: Response) => {
 
 		return res.status(200).json({
 			success: true,
-			message: "Berhasil menggambil detail batch",
+			message: "Berhasil mengambil detail batch",
 			data: batchId,
 		});
 	} catch {

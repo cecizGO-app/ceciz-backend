@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BatchStatus, CountryCode } from "@/generated/prisma/enums";
 
 export const createBatchSchema = z.object({
 	countryCode: z.enum(["CH", "KR", "TH", "JP", "INA"], {
@@ -8,7 +9,7 @@ export const createBatchSchema = z.object({
 		.number()
 		.int()
 		.positive("Nomor batch harus angka bulat positif"),
-	batchDate: z.coerce.date({message:"Format tanggal harus YYYY-MM-DD"}),
+	batchDate: z.coerce.date({ message: "Format tanggal harus YYYY-MM-DD" }),
 	description: z
 		.string()
 		.trim()
@@ -35,3 +36,10 @@ export const updateBatchSchema = createBatchSchema.partial().extend({
 });
 
 export type UpdateBatchInput = z.infer<typeof updateBatchSchema>;
+
+export const getBatchQuerySchema = z.object({
+	countryCode: z.nativeEnum(CountryCode).optional(),
+	status: z.nativeEnum(BatchStatus).optional(),
+});
+
+export type GetBatchQueryInput = z.infer<typeof getBatchQuerySchema>;

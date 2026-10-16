@@ -1,10 +1,10 @@
 import { Router } from "express";
 import {
 	createBatch,
-	patchBatch,
+	deleteBatchId,
 	getBatch,
 	getBatchId,
-	deleteBatchId,
+	patchBatch,
 } from "@/controllers/batch.controller";
 import { requireAuth } from "@/middleware/requireAuth";
 import { requireRole } from "@/middleware/requireRole";
