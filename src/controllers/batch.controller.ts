@@ -5,6 +5,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { createBatchSchema, updateBatchSchema } from "@/schemas/batch.schema";
 import type { CountryCode, BatchStatus } from "@/generated/prisma/enums";
 
+// Create Batch Admin
 export const createBatch = async (req: Request, res: Response) => {
 	try {
 		const validatedData = createBatchSchema.parse(req.body);
@@ -58,6 +59,7 @@ export const createBatch = async (req: Request, res: Response) => {
 	}
 };
 
+//Update Batch Admin By ID
 export const patchBatch = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params;
@@ -147,6 +149,7 @@ export const patchBatch = async (req: Request, res: Response) => {
 	}
 };
 
+//Get Batch Admin
 export const getBatch = async (req: Request, res: Response) => {
 	try {
 		const { countryCode, status } = req.query;
@@ -187,6 +190,7 @@ export const getBatch = async (req: Request, res: Response) => {
 	}
 };
 
+//Get Batch Admin By ID
 export const getBatchId = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params;
@@ -233,6 +237,7 @@ export const getBatchId = async (req: Request, res: Response) => {
 	}
 };
 
+//Delete Batch Admin
 export const deleteBatchId = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params;
