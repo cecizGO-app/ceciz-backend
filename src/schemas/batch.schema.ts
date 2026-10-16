@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createBatchSchema = z.object({
 	countryCode: z.enum(["CH", "KR", "TH", "JP", "INA"], {
-		error: "Kode Negara harus CH, KR, TH, JP, atau INA",
+		message: "Kode Negara harus CH, KR, TH, JP, atau INA",
 	}),
 	batchNumber: z
 		.number()
@@ -31,7 +31,7 @@ export const createBatchSchema = z.object({
 export type CreateBatchInput = z.infer<typeof createBatchSchema>;
 
 export const updateBatchSchema = createBatchSchema.partial().extend({
-	status: z.enum(["OPEN", "CLOSED", "ARCHIVED"]),
+	status: z.enum(["OPEN", "CLOSED", "ARCHIVED"]).optional(),
 });
 
 export type UpdateBatchInput = z.infer<typeof updateBatchSchema>;

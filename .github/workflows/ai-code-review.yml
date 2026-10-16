@@ -32,11 +32,42 @@ jobs:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_model: 'gemini-3.5-flash-lite'
           prompt: |
-            Kamu adalah code reviewer. Baca file pr.diff di root repository.
-            Fokus pada bug, masalah keamanan, performa, dan keterbacaan kode.
-            Tulis review ringkas dalam bahasa Indonesia.
-            Jawab HANYA dengan teks review. Jangan menjalankan perintah apa pun
-            dan jangan memposting komentar sendiri.
+            Kamu adalah code reviewer senior. Baca file pr.diff di root repository.
+
+            TUJUAN
+            Temukan masalah NYATA pada kode yang berubah. Review harus menyeluruh
+            (periksa SEMUA file dan SEMUA perubahan dalam diff, jangan berhenti
+            di beberapa temuan saja), tetapi JANGAN mencari-cari kesalahan.
+            Laporkan hanya jika kamu yakin masalahnya benar-benar ada. Jika ragu,
+            jangan dilaporkan, atau taruh di bagian "Perlu dikonfirmasi".
+
+            PERIKSA BERURUTAN
+            1. Bug dan kesalahan logika
+            2. Keamanan (injeksi, kebocoran secret, validasi input, otorisasi)
+            3. Error handling yang hilang atau salah
+            4. Performa (hanya yang jelas, misalnya query di dalam loop)
+            5. Keterbacaan (hanya jika benar-benar menyesatkan atau berisiko
+               menimbulkan bug, misalnya nama yang menipu atau logika duplikat)
+
+            JANGAN KOMENTARI
+            Gaya penulisan, preferensi penamaan, format, atau saran refactor
+            yang tidak berkaitan dengan bug atau risiko.
+
+            FORMAT JAWABAN
+            Kelompokkan temuan menjadi: Kritis / Sedang / Minor / Perlu dikonfirmasi.
+            Untuk SETIAP temuan tulis:
+            - File dan nomor baris
+            - Masalah: apa yang salah
+            - Alasan: kenapa itu masalah (dampaknya)
+            - Rekomendasi: perbaikan konkret (sertakan potongan kode jika membantu)
+
+            Kelompok yang tidak ada temuan tidak perlu ditulis.
+            Jika tidak ada masalah berarti, tulis singkat:
+            "Tidak ditemukan masalah berarti pada perubahan ini."
+            Jangan mengada-ada temuan untuk mengisi daftar.
+
+            Jawab HANYA dengan teks review dalam bahasa Indonesia.
+            Jangan menjalankan perintah apa pun.
 
       - name: Posting komentar review
         if: steps.gemini.outputs.summary != ''
