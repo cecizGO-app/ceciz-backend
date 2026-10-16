@@ -1,4 +1,4 @@
-name: AI Code Reviewer
+name: Automated Code Review
 
 on:
   pull_request:
@@ -11,12 +11,11 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Gemini Code Review
-        uses: google-gemini/review-action@v1
+      - name: Gemini PR Review
+        uses: google-genai/gemini-action@v1
         with:
-          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          api_key: ${{ secrets.GEMINI_API_KEY }}
+          model: 'gemini-2.5-flash'
