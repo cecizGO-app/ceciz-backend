@@ -15,6 +15,7 @@ export const createBatch = async (req: Request, res: Response) => {
 				batchNumber: validatedData.batchNumber,
 				batchDate: new Date(validatedData.batchDate),
 				description: validatedData.description ?? null,
+				shippingFee: validatedData.shippingFee ?? null,
 				feeGo: validatedData.feeGo,
 				feeRekap: validatedData.feeRekap,
 				feeNyelem: validatedData.feeNyelem,
@@ -37,7 +38,7 @@ export const createBatch = async (req: Request, res: Response) => {
 				success: false,
 				message: "Validasi data gagal",
 				errors: error.issues.map((err) => ({
-					field: err.path.join(""),
+					field: err.path.join("."),
 					message: err.message,
 				})),
 			});
@@ -144,7 +145,7 @@ export const patchBatch = async (req: Request, res: Response) => {
 		}
 		return res.status(500).json({
 			success: false,
-			message: "Intenal server error",
+			message: "Internal server error",
 		});
 	}
 };
@@ -179,7 +180,7 @@ export const getBatch = async (req: Request, res: Response) => {
 
 		return res.status(200).json({
 			success: true,
-			message: "Berhasil menggambil daftar batch",
+			message: "Berhasil mengambil daftar batch",
 			data: batches,
 		});
 	} catch {

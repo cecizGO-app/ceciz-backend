@@ -8,7 +8,7 @@ export const createBatchSchema = z.object({
 		.number()
 		.int()
 		.positive("Nomor batch harus angka bulat positif"),
-	batchDate: z.date({message:"Format tanggal harus YYYY-MM-DD"}),
+	batchDate: z.coerce.date({message:"Format tanggal harus YYYY-MM-DD"}),
 	description: z
 		.string()
 		.trim()
