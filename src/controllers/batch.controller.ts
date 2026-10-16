@@ -90,9 +90,9 @@ export const patchBatch = async (req: Request, res: Response) => {
 				...(validatedData.shippingFee !== undefined && {
 					shippingFee: validatedData.shippingFee,
 				}),
-				...(validatedData.feeGo && { feeGo: validatedData.feeGo }),
-				...(validatedData.feeRekap && { feeRekap: validatedData.feeRekap }),
-				...(validatedData.feeNyelem && { feeNyelem: validatedData.feeNyelem }),
+				...(validatedData.feeGo  !== undefined && { feeGo: validatedData.feeGo }),
+				...(validatedData.feeRekap  !== undefined && { feeRekap: validatedData.feeRekap }),
+				...(validatedData.feeNyelem  !== undefined && { feeNyelem: validatedData.feeNyelem }),
 				...(validatedData.rateHarian !== undefined && {
 					rateHarian: validatedData.rateHarian,
 				}),
