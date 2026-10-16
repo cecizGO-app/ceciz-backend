@@ -1,0 +1,93 @@
+name: Automated Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ambil diff PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr diff ${{ github.event.pull_request.number }} > pr.diff
+
+      - name: Gemini PR Review
+        id: gemini
+        continue-on-error: true
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: 'gemini-3.5-flash-lite'
+          prompt: |
+            Kamu adalah code reviewer senior. Baca file pr.diff di root repository.
+
+            TUJUAN
+            Temukan masalah NYATA pada kode yang berubah, dalam SATU kali review
+            yang menyeluruh. Laporkan hanya jika kamu yakin masalahnya benar-benar
+            ada. Jika ragu, jangan dilaporkan, atau taruh di "Perlu dikonfirmasi".
+            Jangan mencari-cari kesalahan dan jangan mengisi daftar dengan temuan
+            yang dibuat-buat.
+
+            LANGKAH KERJA
+            1. Dari pr.diff, buat daftar SEMUA fungsi, handler, dan endpoint yang
+               berubah atau ditambahkan.
+            2. Untuk setiap item, buka file lengkapnya (bukan hanya potongan diff)
+               supaya kamu paham konteks: fungsi yang dipanggil, struktur data,
+               dan middleware di sekitarnya.
+            3. Periksa SATU PER SATU dengan checklist ini:
+               - Bug dan kesalahan logika (kondisi salah, off-by-one, nilai
+                 nil/null tidak ditangani, status code atau respons salah)
+               - Keamanan (validasi input, autentikasi dan otorisasi, injeksi,
+                 kebocoran secret atau data sensitif di respons dan log)
+               - Error handling (error diabaikan, tidak di-return, atau pesan
+                 error membocorkan detail internal)
+               - Database dan resource (query di dalam loop, query tanpa limit,
+                 koneksi atau file tidak ditutup, transaksi yang tidak lengkap)
+               - Concurrency (race condition, state yang dipakai bersama)
+            4. Sebelum menulis jawaban, cek ulang tiap temuan: apakah benar-benar
+               ada di kode, dan apakah dampaknya nyata? Buang yang tidak yakin.
+
+            JANGAN KOMENTARI
+            Gaya penulisan, preferensi penamaan, format, komentar kode, atau saran
+            refactor yang tidak berkaitan dengan bug atau risiko. Abaikan semua
+            masalah minor.
+
+            FORMAT JAWABAN
+            Kelompokkan temuan menjadi: Kritis / Sedang / Perlu dikonfirmasi.
+            Untuk SETIAP temuan tulis:
+            - File dan nomor baris (atau nama fungsi jika nomor baris tidak pasti)
+            - Masalah: apa yang salah
+            - Alasan: kenapa itu masalah dan apa dampaknya
+            - Rekomendasi: perbaikan konkret (sertakan potongan kode jika membantu)
+
+            Kelompok yang tidak ada temuan tidak perlu ditulis.
+            Jika tidak ada masalah berarti, tulis singkat:
+            "Tidak ditemukan masalah berarti pada perubahan ini."
+
+            ATURAN
+            Jawab HANYA dengan teks review dalam bahasa Indonesia.
+            Kamu boleh membaca file, tetapi JANGAN menjalankan perintah shell
+            apa pun dan JANGAN mengubah file.
+      - name: Posting komentar review
+        if: steps.gemini.outputs.summary != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REVIEW: ${{ steps.gemini.outputs.summary }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "## Review Otomatis (Gemini)
+
+          $REVIEW"

@@ -1,0 +1,45 @@
+import { z } from "zod";
+import { BatchStatus, CountryCode } from "@/generated/prisma/enums";
+
+export const createBatchSchema = z.object({
+	countryCode: z.enum(["CH", "KR", "TH", "JP", "INA"], {
+		message: "Kode Negara harus CH, KR, TH, JP, atau INA",
+	}),
+	batchNumber: z
+		.number()
+		.int()
+		.positive("Nomor batch harus angka bulat positif"),
+	batchDate: z.coerce.date({ message: "Format tanggal harus YYYY-MM-DD" }),
+	description: z
+		.string()
+		.trim()
+		.max(250, "Deskripsi maksimal 250 karakter")
+		.optional(),
+	shippingFee: z.number().nonnegative().optional(),
+	feeGo: z.number().nonnegative().default(0),
+	feeRekap: z.number().nonnegative().default(0),
+	feeNyelem: z.number().nonnegative().default(0),
+	rateHarian: z
+		.number()
+		.positive("Rate harian harus bernilai positif")
+		.optional(),
+	feeWh: z.number().nonnegative().optional(),
+	feeProxy: z.number().nonnegative().optional(),
+	adminNyelemId: z.string().optional(),
+	proxyCoName: z.string().optional(),
+});
+
+export type CreateBatchInput = z.infer<typeof createBatchSchema>;
+
+export const updateBatchSchema = createBatchSchema.partial().extend({
+	status: z.enum(["OPEN", "CLOSED", "ARCHIVED"]).optional(),
+});
+
+export type UpdateBatchInput = z.infer<typeof updateBatchSchema>;
+
+export const getBatchQuerySchema = z.object({
+	countryCode: z.nativeEnum(CountryCode).optional(),
+	status: z.nativeEnum(BatchStatus).optional(),
+});
+
+export type GetBatchQueryInput = z.infer<typeof getBatchQuerySchema>;

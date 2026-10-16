@@ -1,8 +1,9 @@
 import "dotenv/config";
 import { toNodeHandler } from "better-auth/node";
-import express from "express";
 import cors from "cors";
+import express from "express";
 import { auth } from "@/lib/auth";
+import { router as batchRouter } from "@/routes/batch.routes";
 
 const app = express();
 const port = 3005;
@@ -17,6 +18,8 @@ app.use(
 app.all("/api/auth/*splat", toNodeHandler(auth));
 
 app.use(express.json());
+
+app.use(batchRouter);
 
 app.listen(port, () => {
 	console.log(`Example app listening on port ${port}`);
