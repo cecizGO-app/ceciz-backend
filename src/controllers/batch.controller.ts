@@ -17,6 +17,7 @@ export const createBatch = async (req: Request, res: Response) => {
 				countryCode: validatedData.countryCode,
 				batchNumber: validatedData.batchNumber,
 				batchDate: new Date(validatedData.batchDate),
+				title: validatedData.title,
 				description: validatedData.description ?? null,
 				shippingFee: validatedData.shippingFee ?? null,
 				feeGo: validatedData.feeGo,
@@ -27,6 +28,25 @@ export const createBatch = async (req: Request, res: Response) => {
 				feeProxy: validatedData.feeProxy ?? null,
 				adminNyelemId: validatedData.adminNyelemId ?? null,
 				proxyCoName: validatedData.proxyCoName ?? null,
+
+				...(validatedData.items &&
+					validatedData.items.length > 0 && {
+						items: {
+							create: validatedData.items.map((item) => ({
+								buyerId: item.buyerId,
+								buyerName: item.buyerName ?? null,
+								description: item.description,
+								hargaAsli: item.hargaAsli,
+								pcs: item.pcs,
+								feeNyelem: item.feeNyelem ?? null,
+								hargaPerBuyer: item.hargaPerBuyer ?? null,
+								hargaJualPerBuyer: item.hargaJualPerBuyer ?? null,
+							})),
+						},
+					}),
+			},
+			include: {
+				items: true,
 			},
 		});
 
@@ -87,6 +107,7 @@ export const patchBatch = async (req: Request, res: Response) => {
 					batchNumber: validatedData.batchNumber,
 				}),
 				...(validatedData.batchDate && { batchDate: validatedData.batchDate }),
+				...(validatedData.title && { title: validatedData.title }),
 				...(validatedData.description !== undefined && {
 					description: validatedData.description,
 				}),

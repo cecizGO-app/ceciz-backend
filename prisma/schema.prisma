@@ -190,6 +190,7 @@ model Batch {
   countryCode   CountryCode
   batchNumber   Int
   batchDate     DateTime
+  title         String      @default("")
   description   String?
   shippingFee   Decimal?    @db.Decimal(14, 2) // Tidak ada di INA
   feeGo         Decimal     @default(0) @db.Decimal(14, 2)
