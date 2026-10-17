@@ -6,6 +6,7 @@
   "main": "src/server.ts",
   "scripts": {
     "build": "prisma generate && tsc",
+    "start": "tsx src/server.ts",
     "dev": "tsx src/server.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -26,6 +27,7 @@
     "@prisma/adapter-neon": "^7.10.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "7",
+    "@scalar/express-api-reference": "^0.10.30",
     "better-auth": "^1.7.5",
     "cors": "^2.8.6",
     "dotenv": "^18.0.2",
