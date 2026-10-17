@@ -23,7 +23,11 @@ export const createBatchSchema = z.object({
 		.int()
 		.positive("Nomor batch harus angka bulat positif"),
 	batchDate: z.coerce.date({ message: "Format tanggal harus YYYY-MM-DD" }),
-	title: z.string().trim().min(1, "Judul batch wajib diisi").max(50, "Judul batch maksimal 50 karakter"),
+	title: z
+		.string()
+		.trim()
+		.min(1, "Judul batch wajib diisi")
+		.max(50, "Judul batch maksimal 50 karakter"),
 	description: z
 		.string()
 		.trim()

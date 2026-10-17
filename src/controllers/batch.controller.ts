@@ -107,7 +107,7 @@ export const patchBatch = async (req: Request, res: Response) => {
 					batchNumber: validatedData.batchNumber,
 				}),
 				...(validatedData.batchDate && { batchDate: validatedData.batchDate }),
-				...(validatedData.title && {title: validatedData.title}),
+				...(validatedData.title && { title: validatedData.title }),
 				...(validatedData.description !== undefined && {
 					description: validatedData.description,
 				}),
