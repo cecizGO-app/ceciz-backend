@@ -18,6 +18,42 @@ export const getAllTracking = async (req: Request, res: Response) => {
 				...(query.whName && {
 					whName: { contains: query.whName, mode: "insensitive" },
 				}),
+				...(query.search && {
+					OR: [
+						{ whName: { contains: query.search, mode: "insensitive" } },
+						{ boxNo: { contains: query.search, mode: "insensitive" } },
+						{ description: { contains: query.search, mode: "insensitive" } },
+						{ notes: { contains: query.search, mode: "insensitive" } },
+						{ resiNumber: { has: query.search } },
+						{
+							batch: {
+								items: {
+									some: {
+										OR: [
+											{
+												description: {
+													contains: query.search,
+													mode: "insensitive",
+												},
+											},
+											{
+												buyerName: {
+													contains: query.search,
+													mode: "insensitive",
+												},
+											},
+											{
+												buyer: {
+													name: { contains: query.search, mode: "insensitive" },
+												},
+											},
+										],
+									},
+								},
+							},
+						},
+					],
+				}),
 			},
 			orderBy: {
 				updatedAt: "desc",
@@ -85,21 +121,63 @@ export const getTrackingByBatchId = async (req: Request, res: Response) => {
 			});
 		}
 
-		const tracking = await prisma.tracking.findUnique({
+		let tracking = await prisma.tracking.findUnique({
 			where: { batchId },
 			include: {
 				batch: {
 					include: {
-						items: true,
+						items: {
+							include: {
+								buyer: {
+									select: {
+										id: true,
+										name: true,
+										idLine: true,
+									},
+								},
+							},
+						},
 					},
 				},
 			},
 		});
 
 		if (!tracking) {
-			return res.status(404).json({
-				success: false,
-				message: "Data tracking untuk batch ini tidak ditemukan",
+			const batch = await prisma.batch.findUnique({
+				where: { id: batchId },
+			});
+
+			if (!batch) {
+				return res.status(404).json({
+					success: false,
+					message: "Batch tidak ditemukan",
+				});
+			}
+
+			tracking = await prisma.tracking.create({
+				data: {
+					batchId,
+					countryCode: batch.countryCode,
+					trackingStatus: "PO",
+					resiNumber: [],
+				},
+				include: {
+					batch: {
+						include: {
+							items: {
+								include: {
+									buyer: {
+										select: {
+											id: true,
+											name: true,
+											idLine: true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			});
 		}
 
