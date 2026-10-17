@@ -1,18 +1,41 @@
 import "dotenv/config";
+import { apiReference } from "@scalar/express-api-reference";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express from "express";
+import { openApiSpec } from "@/docs/openapi";
 import { auth } from "@/lib/auth";
 import { router as batchRouter } from "@/routes/batch.routes";
 import { router as trackingRouter } from "@/routes/tracking.routes";
 
 const app = express();
-const port = 3005;
+const port = process.env.PORT || 3005;
+
+const allowedOrigins = [
+	"http://localhost:3000",
+	"http://localhost:5173",
+	process.env.FRONTEND_URL,
+].filter(Boolean) as string[];
 
 app.use(
 	cors({
-		origin: ["http://localhost:3000", "http://localhost:5173"],
+		origin: allowedOrigins,
 		credentials: true,
+	}),
+);
+
+// Scalar API Documentation
+app.get("/openapi.json", (_req, res) => {
+	res.json(openApiSpec);
+});
+
+app.use(
+	"/reference",
+	apiReference({
+		theme: "purple",
+		spec: {
+			content: openApiSpec,
+		},
 	}),
 );
 
@@ -25,5 +48,8 @@ app.use(batchRouter);
 app.use(trackingRouter);
 
 app.listen(port, () => {
-	console.log(`Example app listening on port ${port}`);
+	console.log(`Server listening on port ${port}`);
+	console.log(
+		`API Documentation available at http://localhost:${port}/reference`,
+	);
 });
