@@ -121,8 +121,26 @@ export const getTrackingByBatchId = async (req: Request, res: Response) => {
 			});
 		}
 
-		let tracking = await prisma.tracking.findUnique({
+		const batch = await prisma.batch.findUnique({
+			where: { id: batchId },
+		});
+
+		if (!batch) {
+			return res.status(404).json({
+				success: false,
+				message: "Batch tidak ditemukan",
+			});
+		}
+
+		const tracking = await prisma.tracking.upsert({
 			where: { batchId },
+			update: {},
+			create: {
+				batchId,
+				countryCode: batch.countryCode,
+				trackingStatus: "PO",
+				resiNumber: [],
+			},
 			include: {
 				batch: {
 					include: {
@@ -141,45 +159,6 @@ export const getTrackingByBatchId = async (req: Request, res: Response) => {
 				},
 			},
 		});
-
-		if (!tracking) {
-			const batch = await prisma.batch.findUnique({
-				where: { id: batchId },
-			});
-
-			if (!batch) {
-				return res.status(404).json({
-					success: false,
-					message: "Batch tidak ditemukan",
-				});
-			}
-
-			tracking = await prisma.tracking.create({
-				data: {
-					batchId,
-					countryCode: batch.countryCode,
-					trackingStatus: "PO",
-					resiNumber: [],
-				},
-				include: {
-					batch: {
-						include: {
-							items: {
-								include: {
-									buyer: {
-										select: {
-											id: true,
-											name: true,
-											idLine: true,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			});
-		}
 
 		return res.status(200).json({
 			success: true,
