@@ -568,25 +568,79 @@ export const bulkVerifyPayments = async (req: Request, res: Response) => {
 		const validatedData = bulkVerifyPaymentSchema.parse(req.body);
 		const adminUser = req.user;
 
-		const updatedCount = await prisma.payment.updateMany({
-			where: {
-				id: { in: validatedData.paymentIds },
-			},
-			data: {
-				verificationStatus: validatedData.status,
-				verifiedById: adminUser?.id ?? null,
-				verifiedAt: new Date(),
-				rejectReason:
-					validatedData.status === "REJECTED"
-						? (validatedData.rejectReason ?? null)
-						: null,
-			},
+		let updatedCount = 0;
+		await prisma.$transaction(async (tx) => {
+			for (const paymentId of validatedData.paymentIds) {
+				const existingPayment = await tx.payment.findUnique({
+					where: { id: paymentId },
+					include: { invoice: true },
+				});
+				if (!existingPayment) continue;
+
+				await tx.payment.update({
+					where: { id: paymentId },
+					data: {
+						verificationStatus: validatedData.status,
+						verifiedById: adminUser?.id ?? null,
+						verifiedAt: new Date(),
+						rejectReason:
+							validatedData.status === "REJECTED"
+								? (validatedData.rejectReason ?? null)
+								: null,
+					},
+				});
+				updatedCount++;
+
+				if (validatedData.status === "APPROVED") {
+					const approvedSum = await tx.payment.aggregate({
+						_sum: { amount: true },
+						where: {
+							invoiceId: existingPayment.invoiceId,
+							verificationStatus: VerificationStatus.APPROVED,
+						},
+					});
+
+					const totalPaid = Number(approvedSum._sum.amount ?? 0);
+					const invoiceTotal = Number(existingPayment.invoice.totalAmount);
+
+					if (totalPaid >= invoiceTotal) {
+						await tx.invoice.update({
+							where: { id: existingPayment.invoiceId },
+							data: { invoiceStatus: InvoiceStatus.PAID },
+						});
+					}
+
+					await tx.notification.create({
+						data: {
+							buyerId: existingPayment.buyerId,
+							channel: NotificationChannel.IN_APP,
+							type: NotificationType.PAYMENT_APPROVED,
+							title: "Pembayaran Disetujui",
+							body: `Pembayaran sebesar Rp ${Number(existingPayment.amount).toLocaleString("id-ID")} telah disetujui.`,
+							triggeredByEvent: "PAYMENT_VERIFIED",
+							referenceId: existingPayment.id,
+						},
+					});
+				} else if (validatedData.status === "REJECTED") {
+					await tx.notification.create({
+						data: {
+							buyerId: existingPayment.buyerId,
+							channel: NotificationChannel.IN_APP,
+							type: NotificationType.PAYMENT_REJECTED,
+							title: "Pembayaran Ditolak",
+							body: `Pembayaran sebesar Rp ${Number(existingPayment.amount).toLocaleString("id-ID")} ditolak. Alasan: ${validatedData.rejectReason}`,
+							triggeredByEvent: "PAYMENT_REJECTED",
+							referenceId: existingPayment.id,
+						},
+					});
+				}
+			}
 		});
 
 		return res.status(200).json({
 			success: true,
-			message: `${updatedCount.count} pembayaran berhasil diperbarui ke status ${validatedData.status}`,
-			data: { count: updatedCount.count },
+			message: `${updatedCount} pembayaran berhasil diperbarui ke status ${validatedData.status}`,
+			data: { count: updatedCount },
 		});
 	} catch (error) {
 		if (error instanceof ZodError) {
