@@ -6,6 +6,7 @@ import express from "express";
 import { openApiSpec } from "@/docs/openapi";
 import { auth } from "@/lib/auth";
 import { router as batchRouter } from "@/routes/batch.routes";
+import { router as paymentRouter } from "@/routes/payment.routes";
 import { router as trackingRouter } from "@/routes/tracking.routes";
 
 const app = express();
@@ -44,6 +45,8 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
 
 app.use(batchRouter);
+
+app.use(paymentRouter);
 
 app.use(trackingRouter);
 
