@@ -29,6 +29,15 @@ export const openApiSpec = {
 			description:
 				"Operasi status tracking dan logistik batch (Khusus role OWNER & STAFF)",
 		},
+		{
+			name: "Admin - Payments",
+			description:
+				"Operasi verifikasi, penolakan, pencatatan manual, dan statistik pembayaran (Khusus role OWNER & STAFF)",
+		},
+		{
+			name: "Storage & Upload",
+			description: "Unggah file dan gambar ke Cloudflare R2 storage",
+		},
 	],
 	components: {
 		securitySchemes: {
@@ -259,6 +268,67 @@ export const openApiSpec = {
 						type: "string",
 						description: "Catatan khusus tracking",
 					},
+				},
+			},
+			PaymentMethod: {
+				type: "string",
+				enum: ["BCA", "QRIS", "SEABANK", "SPAY", "CASH"],
+				description: "Metode transfer pembayaran",
+			},
+			VerificationStatus: {
+				type: "string",
+				enum: ["PENDING", "APPROVED", "REJECTED"],
+				description: "Status verifikasi pembayaran",
+			},
+			VerifyPaymentRequest: {
+				type: "object",
+				required: ["status"],
+				properties: {
+					status: {
+						type: "string",
+						enum: ["APPROVED", "REJECTED"],
+						description: "Status persetujuan verifikasi",
+					},
+					rejectReason: {
+						type: "string",
+						description: "Alasan penolakan (wajib jika status REJECTED)",
+						example: "Bukti transfer buram / nominal tidak sesuai",
+					},
+				},
+			},
+			BulkVerifyPaymentRequest: {
+				type: "object",
+				required: ["paymentIds", "status"],
+				properties: {
+					paymentIds: {
+						type: "array",
+						items: { type: "string" },
+						description: "Daftar ID pembayaran yang dipilih",
+					},
+					status: {
+						type: "string",
+						enum: ["APPROVED", "REJECTED"],
+					},
+					rejectReason: {
+						type: "string",
+						description: "Alasan jika ditolak",
+					},
+				},
+			},
+			CreatePaymentRequest: {
+				type: "object",
+				required: ["invoiceId", "buyerId", "amount", "paymentMethod"],
+				properties: {
+					invoiceId: { type: "string", example: "inv_123abc" },
+					buyerId: { type: "string", example: "usr_456def" },
+					amount: { type: "number", example: 685000 },
+					paymentMethod: { $ref: "#/components/schemas/PaymentMethod" },
+					paymentDate: { type: "string", format: "date-time" },
+					paymentProofUrl: {
+						type: "string",
+						example: "https://r2.ceciz.com/proof.jpg",
+					},
+					notes: { type: "string", example: "Pelunasan 3 pcs PC" },
 				},
 			},
 			StandardResponse: {
@@ -661,6 +731,310 @@ export const openApiSpec = {
 					"200": { description: "Data tracking berhasil diperbarui" },
 					"400": { description: "Validasi data tracking gagal" },
 					"404": { description: "Batch tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/upload": {
+			post: {
+				tags: ["Storage & Upload"],
+				summary: "Unggah File Gambar ke Cloudflare R2",
+				description:
+					"Mengunggah file gambar (bukti transfer, foto merch) ke Cloudflare R2 bucket. Format multipart/form-data dengan field 'file'.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"multipart/form-data": {
+							schema: {
+								type: "object",
+								properties: {
+									file: {
+										type: "string",
+										format: "binary",
+										description:
+											"File gambar yang akan diunggah (JPG, PNG, WEBP)",
+									},
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": {
+						description: "File berhasil diunggah",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean", example: true },
+										message: {
+											type: "string",
+											example: "Bukti pembayaran berhasil diunggah",
+										},
+										data: {
+											type: "object",
+											properties: {
+												url: {
+													type: "string",
+													example:
+														"https://r2.ceciz.com/payments/123-bukti.jpg",
+												},
+												fileName: { type: "string", example: "bukti.jpg" },
+												size: { type: "integer", example: 204800 },
+												mimeType: { type: "string", example: "image/jpeg" },
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"400": {
+						description: "File tidak disertakan atau format tidak didukung",
+					},
+					"500": { description: "Gagal mengunggah file ke Cloudflare R2" },
+				},
+			},
+		},
+		"/api/v1/admin/payments/stats": {
+			get: {
+				tags: ["Admin - Payments"],
+				summary: "Statistik Verifikasi Pembayaran",
+				description:
+					"Mengambil ringkasan metrik verifikasi: Menunggu Verifikasi (+hari ini), Disetujui Hari Ini (count & total nominal), Ditolak Hari Ini, Total Terverifikasi Bulan Ini, dan counter tab status. Khusus role OWNER atau STAFF.",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": {
+						description: "Berhasil mengambil statistik pembayaran",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean", example: true },
+										message: {
+											type: "string",
+											example: "Berhasil mengambil statistik pembayaran",
+										},
+										data: {
+											type: "object",
+											properties: {
+												menungguVerifikasi: {
+													type: "object",
+													properties: {
+														count: { type: "integer", example: 11 },
+														diunggahHariIni: { type: "integer", example: 5 },
+													},
+												},
+												disetujuiHariIni: {
+													type: "object",
+													properties: {
+														count: { type: "integer", example: 18 },
+														totalNominal: { type: "number", example: 8450000 },
+													},
+												},
+												ditolakHariIni: {
+													type: "object",
+													properties: {
+														count: { type: "integer", example: 2 },
+													},
+												},
+												totalTerverifikasiBulanIni: {
+													type: "object",
+													properties: {
+														totalNominal: { type: "number", example: 24840000 },
+														labelBulan: {
+															type: "string",
+															example: "Bulan Oktober 2026",
+														},
+													},
+												},
+												tabCounts: {
+													type: "object",
+													properties: {
+														pending: { type: "integer", example: 11 },
+														approved: { type: "integer", example: 2 },
+														rejected: { type: "integer", example: 1 },
+														all: { type: "integer", example: 14 },
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"401": { description: "Tidak terautentikasi" },
+					"403": { description: "Role tidak diizinkan" },
+				},
+			},
+		},
+		"/api/v1/admin/payments": {
+			get: {
+				tags: ["Admin - Payments"],
+				summary: "Daftar Pembayaran (Verifikasi Admin)",
+				description:
+					"Mengambil daftar pembayaran dengan filter status verifikasi (PENDING, APPROVED, REJECTED), metode pembayaran, batch, rentang waktu, dan pencarian teks.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "status",
+						in: "query",
+						required: false,
+						schema: { $ref: "#/components/schemas/VerificationStatus" },
+						description: "Filter status verifikasi",
+					},
+					{
+						name: "paymentMethod",
+						in: "query",
+						required: false,
+						schema: { $ref: "#/components/schemas/PaymentMethod" },
+						description: "Filter metode pembayaran",
+					},
+					{
+						name: "batchId",
+						in: "query",
+						required: false,
+						schema: { type: "string" },
+						description: "Filter ID batch tertentu",
+					},
+					{
+						name: "search",
+						in: "query",
+						required: false,
+						schema: { type: "string" },
+						description: "Pencarian nama buyer, kontak, batch, atau nominal",
+					},
+					{
+						name: "timeRange",
+						in: "query",
+						required: false,
+						schema: {
+							type: "string",
+							enum: ["today", "this_week", "this_month", "all"],
+						},
+						description: "Filter dropdown Semua Waktu",
+					},
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer" },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer" },
+					},
+				],
+				responses: {
+					"200": {
+						description: "Berhasil mengambil daftar pembayaran",
+						content: {
+							"application/json": {
+								schema: { $ref: "#/components/schemas/StandardResponse" },
+							},
+						},
+					},
+					"401": { description: "Tidak terautentikasi" },
+					"403": { description: "Role tidak diizinkan" },
+				},
+			},
+			post: {
+				tags: ["Admin - Payments"],
+				summary: "Catat Pembayaran Manual",
+				description:
+					"Menambahkan transaksi pembayaran manual oleh admin/owner (Tombol '+ Tambah Pembayaran'). Status langsung disetujui (APPROVED) dan mengecek pelunasan invoice.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/CreatePaymentRequest" },
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Pembayaran manual berhasil dicatat" },
+					"400": { description: "Validasi data gagal" },
+					"404": { description: "Invoice tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/payments/{id}": {
+			get: {
+				tags: ["Admin - Payments"],
+				summary: "Detail Bukti Pembayaran Berdasarkan ID",
+				description:
+					"Mengambil data lengkap pembayaran, buyer, invoice, dan bukti transfer URL untuk drawer modal 'Lihat Bukti'.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID pembayaran (CUID)",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil detail pembayaran" },
+					"404": { description: "Pembayaran tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/payments/{id}/verify": {
+			patch: {
+				tags: ["Admin - Payments"],
+				summary: "Verifikasi Pembayaran (Setujui / Tolak)",
+				description:
+					"Menyetujui (APPROVED) atau menolak (REJECTED) bukti pembayaran. Jika disetujui dan invoice lunas, status invoice otomatis berubah menjadi PAID. Jika ditolak, rejectReason wajib diisi.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID pembayaran",
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/VerifyPaymentRequest" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Pembayaran berhasil diverifikasi" },
+					"400": { description: "Validasi data gagal" },
+					"404": { description: "Pembayaran tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/payments/bulk-verify": {
+			post: {
+				tags: ["Admin - Payments"],
+				summary: "Verifikasi Massal (Bulk Verify)",
+				description:
+					"Menyetujui atau menolak beberapa pembayaran sekaligus berdasarkan checkbox baris tabel.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/BulkVerifyPaymentRequest" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Pembayaran berhasil diperbarui" },
+					"400": { description: "Validasi data gagal" },
 				},
 			},
 		},
