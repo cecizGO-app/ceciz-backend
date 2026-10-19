@@ -51,7 +51,11 @@ export const createBatchSchema = z.object({
 export type CreateBatchInput = z.infer<typeof createBatchSchema>;
 
 export const updateBatchSchema = createBatchSchema.partial().extend({
-	status: z.enum(["OPEN", "CLOSED", "ARCHIVED"]).optional(),
+	status: z.enum(BatchStatus).optional(),
+	hargaTotal: z.number().nullable().optional(),
+	hargaTfSeller: z.number().nullable().optional(),
+	selisihHarga: z.number().nullable().optional(),
+	labaBersih: z.number().nullable().optional(),
 });
 
 export type UpdateBatchInput = z.infer<typeof updateBatchSchema>;
@@ -59,6 +63,14 @@ export type UpdateBatchInput = z.infer<typeof updateBatchSchema>;
 export const getBatchQuerySchema = z.object({
 	countryCode: z.enum(CountryCode).optional(),
 	status: z.enum(BatchStatus).optional(),
+	search: z.string().trim().optional(),
+	whName: z.string().trim().optional(),
+	includeArchived: z
+		.union([z.boolean(), z.enum(["true", "false"])])
+		.transform((val) => val === true || val === "true")
+		.optional(),
+	page: z.coerce.number().int().positive().optional(),
+	limit: z.coerce.number().int().positive().optional(),
 });
 
 export type GetBatchQueryInput = z.infer<typeof getBatchQuerySchema>;

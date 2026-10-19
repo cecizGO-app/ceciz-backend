@@ -1,6 +1,11 @@
 import type { Request, Response } from "express";
 import { ZodError } from "zod";
 import { Prisma } from "@/generated/prisma/client";
+import {
+	BatchStatus,
+	CountryCode,
+	TrackingStatus,
+} from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import {
 	createBatchSchema,
@@ -139,6 +144,27 @@ export const patchBatch = async (req: Request, res: Response) => {
 					proxyCoName: validatedData.proxyCoName,
 				}),
 				...(validatedData.status && { status: validatedData.status }),
+				...(validatedData.hargaTotal !== undefined && {
+					hargaTotal: validatedData.hargaTotal,
+				}),
+				...(validatedData.hargaTfSeller !== undefined && {
+					hargaTfSeller: validatedData.hargaTfSeller,
+				}),
+				...(validatedData.selisihHarga !== undefined && {
+					selisihHarga: validatedData.selisihHarga,
+				}),
+				...(validatedData.labaBersih !== undefined && {
+					labaBersih: validatedData.labaBersih,
+				}),
+			},
+			include: {
+				adminNyelem: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
+				tracking: true,
 			},
 		});
 		return res.status(200).json({
@@ -180,38 +206,201 @@ export const patchBatch = async (req: Request, res: Response) => {
 	}
 };
 
+// Get Batch Stats Admin
+export const getBatchStats = async (_req: Request, res: Response) => {
+	try {
+		const [
+			activeBatches,
+			totalPcProcessed,
+			waitingCalculation,
+			archivedBatches,
+		] = await Promise.all([
+			prisma.batch.count({
+				where: { status: BatchStatus.OPEN },
+			}),
+			prisma.batchItem.aggregate({
+				_sum: { pcs: true },
+				where: { batch: { status: BatchStatus.OPEN } },
+			}),
+			prisma.batch.count({
+				where: {
+					tracking: {
+						trackingStatus: {
+							in: [
+								TrackingStatus.ARRIVED_WH_INA,
+								TrackingStatus.BISA_DI_CO,
+								TrackingStatus.DONE,
+							],
+						},
+					},
+					labaBersih: null,
+				},
+			}),
+			prisma.batch.count({
+				where: { status: BatchStatus.ARCHIVED },
+			}),
+		]);
+
+		return res.status(200).json({
+			success: true,
+			message: "Berhasil mengambil statistik batch",
+			data: {
+				totalBatchAktif: activeBatches,
+				totalPcDiproses: totalPcProcessed._sum.pcs || 0,
+				menungguKalkulasiLaba: waitingCalculation,
+				batchDiarsipkan: archivedBatches,
+				activeBatches,
+				activePcs: totalPcProcessed._sum.pcs || 0,
+				waitingCalculation,
+				archivedBatches,
+			},
+		});
+	} catch (error) {
+		console.error("Error getBatchStats:", error);
+		return res.status(500).json({
+			success: false,
+			message: "Internal Server Error",
+		});
+	}
+};
+
 //Get Batch Admin
 export const getBatch = async (req: Request, res: Response) => {
 	try {
 		const query = getBatchQuerySchema.parse(req.query);
 
-		const batches = await prisma.batch.findMany({
-			where: {
-				...(query.countryCode && { countryCode: query.countryCode }),
-				...(query.status && { status: query.status }),
-			},
-			orderBy: {
-				createdAt: "desc",
-			},
-			include: {
-				adminNyelem: {
-					select: {
-						id: true,
-						name: true,
+		const andConditions: Prisma.BatchWhereInput[] = [];
+
+		if (query.countryCode) {
+			andConditions.push({ countryCode: query.countryCode });
+		}
+
+		if (query.status) {
+			andConditions.push({ status: query.status });
+		} else if (query.includeArchived === false) {
+			andConditions.push({ status: { not: BatchStatus.ARCHIVED } });
+		}
+
+		if (query.whName) {
+			andConditions.push({
+				tracking: {
+					whName: { contains: query.whName, mode: "insensitive" },
+				},
+			});
+		}
+
+		if (query.search) {
+			const searchTrimmed = query.search.trim();
+			const orConditions: Prisma.BatchWhereInput[] = [
+				{ title: { contains: searchTrimmed, mode: "insensitive" } },
+				{ proxyCoName: { contains: searchTrimmed, mode: "insensitive" } },
+				{
+					tracking: {
+						whName: { contains: searchTrimmed, mode: "insensitive" },
 					},
 				},
-				_count: {
-					select: {
-						items: true,
+			];
+
+			const searchNum = parseInt(searchTrimmed, 10);
+			if (!Number.isNaN(searchNum) && /^\d+$/.test(searchTrimmed)) {
+				orConditions.push({ batchNumber: searchNum });
+			}
+
+			const match = searchTrimmed.match(/^([a-zA-Z]{2,3})[- ]?(\d+)$/);
+			if (match?.[1] && match[2]) {
+				const country = match[1].toUpperCase() as CountryCode;
+				const num = parseInt(match[2], 10);
+				if (Object.values(CountryCode).includes(country)) {
+					orConditions.push({
+						AND: [{ countryCode: country }, { batchNumber: num }],
+					});
+				}
+			}
+
+			andConditions.push({ OR: orConditions });
+		}
+
+		const where: Prisma.BatchWhereInput =
+			andConditions.length > 0 ? { AND: andConditions } : {};
+
+		const page = query.page;
+		const limit = query.limit;
+		const skip = page && limit ? (page - 1) * limit : undefined;
+		const take = limit ?? undefined;
+
+		const [batches, total] = await Promise.all([
+			prisma.batch.findMany({
+				where,
+				orderBy: {
+					createdAt: "desc",
+				},
+				...(skip !== undefined && { skip }),
+				...(take !== undefined && { take }),
+				include: {
+					adminNyelem: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+					tracking: {
+						select: {
+							id: true,
+							whName: true,
+							boxNo: true,
+							trackingStatus: true,
+						},
+					},
+					items: {
+						select: {
+							id: true,
+							pcs: true,
+							buyerId: true,
+							buyerName: true,
+						},
+					},
+					_count: {
+						select: {
+							items: true,
+							orders: true,
+						},
 					},
 				},
-			},
+			}),
+			page && limit
+				? prisma.batch.count({ where })
+				: Promise.resolve(undefined),
+		]);
+
+		const mappedBatches = batches.map((batch) => {
+			const totalPcs = batch.items.reduce(
+				(sum, item) => sum + (item.pcs || 1),
+				0,
+			);
+			const uniqueBuyers = new Set(
+				batch.items.map((i) => i.buyerId).filter(Boolean),
+			).size;
+			return {
+				...batch,
+				totalPcs,
+				totalBuyers: uniqueBuyers,
+			};
 		});
 
 		return res.status(200).json({
 			success: true,
 			message: "Berhasil mengambil daftar batch",
-			data: batches,
+			data: mappedBatches,
+			...(page && limit && total !== undefined
+				? {
+						pagination: {
+							total,
+							page,
+							limit,
+							totalPages: Math.ceil(total / limit),
+						},
+					}
+				: {}),
 		});
 	} catch (error) {
 		if (error instanceof ZodError) {

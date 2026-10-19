@@ -4,6 +4,7 @@ import {
 	deleteBatchId,
 	getBatch,
 	getBatchId,
+	getBatchStats,
 	patchBatch,
 } from "@/controllers/batch.controller";
 import { requireAuth } from "@/middleware/requireAuth";
@@ -16,6 +17,13 @@ router.post(
 	requireAuth,
 	requireRole(["OWNER", "STAFF"]),
 	createBatch,
+);
+
+router.get(
+	"/api/v1/admin/batches/stats",
+	requireAuth,
+	requireRole(["OWNER", "STAFF"]),
+	getBatchStats,
 );
 
 router.patch(
