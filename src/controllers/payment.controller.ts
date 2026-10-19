@@ -209,9 +209,21 @@ export const getPayments = async (req: Request, res: Response) => {
 				},
 			];
 
-			const searchNum = parseFloat(searchTrimmed.replace(/[^0-9.]/g, ""));
-			if (!Number.isNaN(searchNum) && searchNum > 0) {
-				orConditions.push({ amount: searchNum });
+			// Search nominal (format Indonesia e.g. 100.000, 100.000,50, Rp 100.000, atau nominal biasa 100000)
+			const numericCandidate = searchTrimmed
+				.replace(/^(?:rp\.?|idr)\s*/i, "")
+				.trim();
+			if (
+				/^\d{1,3}(?:\.\d{3})*(?:,\d+)?$/.test(numericCandidate) ||
+				/^\d+(?:[.,]\d+)?$/.test(numericCandidate)
+			) {
+				const cleanNumStr = numericCandidate
+					.replace(/\./g, "")
+					.replace(/,/g, ".");
+				const searchNum = parseFloat(cleanNumStr);
+				if (!Number.isNaN(searchNum) && searchNum > 0) {
+					orConditions.push({ amount: searchNum });
+				}
 			}
 
 			// Format batch number (e.g. CH-025 or 25)
@@ -520,6 +532,42 @@ export const verifyPayment = async (req: Request, res: Response) => {
 					},
 				});
 			} else if (validatedData.status === "REJECTED") {
+				// Cek penyesuaian status invoice jika sebelumnya lunas namun pembayaran ditolak
+				const approvedSum = await tx.payment.aggregate({
+					_sum: { amount: true },
+					where: {
+						invoiceId: existingPayment.invoiceId,
+						verificationStatus: VerificationStatus.APPROVED,
+					},
+				});
+
+				const totalPaid = Number(approvedSum._sum.amount ?? 0);
+				const invoiceTotal = Number(existingPayment.invoice.totalAmount);
+
+				if (totalPaid < invoiceTotal) {
+					const pendingCount = await tx.payment.count({
+						where: {
+							invoiceId: existingPayment.invoiceId,
+							verificationStatus: VerificationStatus.PENDING,
+						},
+					});
+
+					const isOverdue =
+						new Date() > new Date(existingPayment.invoice.deadlinePayment);
+
+					const revertedStatus =
+						pendingCount > 0
+							? InvoiceStatus.AWAITING_VERIFICATION
+							: isOverdue
+								? InvoiceStatus.OVERDUE
+								: InvoiceStatus.UNPAID;
+
+					await tx.invoice.update({
+						where: { id: existingPayment.invoiceId },
+						data: { invoiceStatus: revertedStatus },
+					});
+				}
+
 				// Notifikasi penolakan ke buyer
 				await tx.notification.create({
 					data: {
@@ -622,6 +670,41 @@ export const bulkVerifyPayments = async (req: Request, res: Response) => {
 						},
 					});
 				} else if (validatedData.status === "REJECTED") {
+					const approvedSum = await tx.payment.aggregate({
+						_sum: { amount: true },
+						where: {
+							invoiceId: existingPayment.invoiceId,
+							verificationStatus: VerificationStatus.APPROVED,
+						},
+					});
+
+					const totalPaid = Number(approvedSum._sum.amount ?? 0);
+					const invoiceTotal = Number(existingPayment.invoice.totalAmount);
+
+					if (totalPaid < invoiceTotal) {
+						const pendingCount = await tx.payment.count({
+							where: {
+								invoiceId: existingPayment.invoiceId,
+								verificationStatus: VerificationStatus.PENDING,
+							},
+						});
+
+						const isOverdue =
+							new Date() > new Date(existingPayment.invoice.deadlinePayment);
+
+						const revertedStatus =
+							pendingCount > 0
+								? InvoiceStatus.AWAITING_VERIFICATION
+								: isOverdue
+									? InvoiceStatus.OVERDUE
+									: InvoiceStatus.UNPAID;
+
+						await tx.invoice.update({
+							where: { id: existingPayment.invoiceId },
+							data: { invoiceStatus: revertedStatus },
+						});
+					}
+
 					await tx.notification.create({
 						data: {
 							buyerId: existingPayment.buyerId,
@@ -677,6 +760,13 @@ export const createPayment = async (req: Request, res: Response) => {
 			return res.status(404).json({
 				success: false,
 				message: "Invoice dengan ID tersebut tidak ditemukan",
+			});
+		}
+
+		if (invoice.buyerId !== validatedData.buyerId) {
+			return res.status(400).json({
+				success: false,
+				message: "Buyer ID tidak sesuai dengan pemilik invoice",
 			});
 		}
 
