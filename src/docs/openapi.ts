@@ -201,6 +201,26 @@ export const openApiSpec = {
 					adminNyelemId: { type: "string" },
 					proxyCoName: { type: "string" },
 					status: { $ref: "#/components/schemas/BatchStatus" },
+					hargaTotal: {
+						type: "number",
+						description: "Total harga kotor batch (IDR)",
+						example: 3200000,
+					},
+					hargaTfSeller: {
+						type: "number",
+						description: "Total transfer ke seller (IDR)",
+						example: 2800000,
+					},
+					selisihHarga: {
+						type: "number",
+						description: "Selisih harga (IDR)",
+						example: 400000,
+					},
+					labaBersih: {
+						type: "number",
+						description: "Laba bersih akhir batch (IDR)",
+						example: 350000,
+					},
 				},
 			},
 			UpdateTrackingRequest: {
@@ -381,6 +401,42 @@ export const openApiSpec = {
 						description:
 							"Filter berdasarkan status batch (OPEN, CLOSED, ARCHIVED)",
 					},
+					{
+						name: "search",
+						in: "query",
+						required: false,
+						schema: { type: "string" },
+						description:
+							"Cari berdasarkan judul, nomor batch, warehouse, atau proxy",
+					},
+					{
+						name: "whName",
+						in: "query",
+						required: false,
+						schema: { type: "string" },
+						description: "Filter berdasarkan nama warehouse logistik",
+					},
+					{
+						name: "includeArchived",
+						in: "query",
+						required: false,
+						schema: { type: "boolean" },
+						description: "Tampilkan batch yang diarsipkan (true/false)",
+					},
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer" },
+						description: "Halaman pagination",
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer" },
+						description: "Jumlah data per halaman",
+					},
 				],
 				responses: {
 					"200": {
@@ -392,6 +448,45 @@ export const openApiSpec = {
 						},
 					},
 					"400": { description: "Query parameter tidak valid" },
+					"401": { description: "Tidak terautentikasi" },
+					"403": { description: "Role tidak diizinkan" },
+				},
+			},
+		},
+		"/api/v1/admin/batches/stats": {
+			get: {
+				tags: ["Admin - Batches"],
+				summary: "Statistik & Ringkasan Batch",
+				description:
+					"Mengambil ringkasan metrik batch: total batch aktif, total PC berjalan, batch menunggu kalkulasi laba, dan batch diarsipkan. Khusus role OWNER atau STAFF.",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": {
+						description: "Berhasil mengambil statistik batch",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean", example: true },
+										message: {
+											type: "string",
+											example: "Berhasil mengambil statistik batch",
+										},
+										data: {
+											type: "object",
+											properties: {
+												totalBatchAktif: { type: "integer", example: 5 },
+												totalPcDiproses: { type: "integer", example: 42 },
+												menungguKalkulasiLaba: { type: "integer", example: 2 },
+												batchDiarsipkan: { type: "integer", example: 10 },
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 					"401": { description: "Tidak terautentikasi" },
 					"403": { description: "Role tidak diizinkan" },
 				},
