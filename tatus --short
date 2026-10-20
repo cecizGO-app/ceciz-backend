@@ -1,0 +1,39 @@
+warning: in the working copy of 'src/controllers/batch.controller.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/controllers/payment.controller.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/controllers/tracking.controller.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/docs/openapi.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/auth.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/prisma.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/r2.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/middleware/requireAuth.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/middleware/requireRole.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/middleware/upload.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/routes/batch.routes.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/routes/payment.routes.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/routes/tracking.routes.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/schemas/batch.schema.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/schemas/payment.schema.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/schemas/tracking.schema.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/server.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/types/express.d.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tsconfig.json', LF will be replaced by CRLF the next time Git touches it
+ src/controllers/batch.controller.ts    | 10 [32m+++++[m[31m-----[m
+ src/controllers/payment.controller.ts  | 13 [32m++++++[m[31m-------[m
+ src/controllers/tracking.controller.ts |  6 [32m+++[m[31m---[m
+ src/docs/openapi.ts                    |  2 [32m+[m[31m-[m
+ src/lib/auth.ts                        |  4 [32m++[m[31m--[m
+ src/lib/prisma.ts                      |  4 [32m++[m[31m--[m
+ src/lib/r2.ts                          |  2 [32m+[m[31m-[m
+ src/middleware/requireAuth.ts          |  5 [32m++[m[31m---[m
+ src/middleware/requireRole.ts          |  4 [32m++[m[31m--[m
+ src/middleware/upload.ts               |  2 [32m+[m[31m-[m
+ src/routes/batch.routes.ts             |  8 [32m++++[m[31m----[m
+ src/routes/payment.routes.ts           | 10 [32m+++++[m[31m-----[m
+ src/routes/tracking.routes.ts          |  8 [32m++++[m[31m----[m
+ src/schemas/batch.schema.ts            |  4 [32m++[m[31m--[m
+ src/schemas/payment.schema.ts          |  4 [32m++[m[31m--[m
+ src/schemas/tracking.schema.ts         |  4 [32m++[m[31m--[m
+ src/server.ts                          | 34 [32m+++++++++++++++[m[31m-------------------[m
+ src/types/express.d.ts                 |  7 [32m++[m[31m-----[m
+ tsconfig.json                          |  9 [32m++++[m[31m-----[m
+ 19 files changed, 65 insertions(+), 75 deletions(-)

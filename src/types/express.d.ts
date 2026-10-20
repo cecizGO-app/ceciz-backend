@@ -1,5 +1,5 @@
-import type { Role } from "../generated/prisma/enums";
-import type { auth } from "../lib/auth";
+﻿import type { Role } from "../generated/prisma/enums.js.js";
+import type { auth } from "../lib/auth.js";
 
 type AuthSession = typeof auth.$Infer.Session;
 
@@ -13,6 +13,3 @@ declare global {
 		}
 	}
 }
-
-export {};
-

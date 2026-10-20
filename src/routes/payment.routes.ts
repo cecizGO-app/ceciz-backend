@@ -1,4 +1,4 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 import {
 	bulkVerifyPayments,
 	createPayment,
@@ -7,10 +7,10 @@ import {
 	getPayments,
 	uploadPaymentProof,
 	verifyPayment,
-} from "@/controllers/payment.controller";
-import { requireAuth } from "@/middleware/requireAuth";
-import { requireRole } from "@/middleware/requireRole";
-import { uploadImage } from "@/middleware/upload";
+} from "../controllers/payment.controller.js";
+import { requireAuth } from "../middleware/requireAuth.js";
+import { requireRole } from "../middleware/requireRole.js";
+import { uploadImage } from "../middleware/upload.js";
 
 export const router: Router = Router();
 

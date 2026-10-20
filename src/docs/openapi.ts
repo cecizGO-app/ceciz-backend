@@ -1,4 +1,4 @@
-export const openApiSpec = {
+﻿export const openApiSpec = {
 	openapi: "3.1.0",
 	info: {
 		title: "Ceciz GO - Backend API",

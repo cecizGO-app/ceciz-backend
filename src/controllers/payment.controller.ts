@@ -1,22 +1,21 @@
-/// <reference path="../types/express.d.ts" />
-import type { Request, Response } from "express";
+﻿import type { Request, Response } from "express";
 import { ZodError } from "zod";
-import type { Prisma } from "@/generated/prisma/client";
+import type { Prisma } from "../generated/prisma/client.js";
 import {
 	CountryCode,
 	InvoiceStatus,
 	NotificationChannel,
 	NotificationType,
 	VerificationStatus,
-} from "@/generated/prisma/enums";
-import { prisma } from "@/lib/prisma";
-import { uploadToR2 } from "@/lib/r2";
+} from "../generated/prisma/enums.js";
+import { prisma } from "../lib/prisma.js";
+import { uploadToR2 } from "../lib/r2.js";
 import {
 	bulkVerifyPaymentSchema,
 	createPaymentSchema,
 	getPaymentQuerySchema,
 	verifyPaymentSchema,
-} from "@/schemas/payment.schema";
+} from "../schemas/payment.schema.js";
 
 // Get Payment Stats Admin (Top Cards)
 export const getPaymentStats = async (_req: Request, res: Response) => {

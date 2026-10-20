@@ -1,13 +1,13 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import { apiReference } from "@scalar/express-api-reference";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express, { type Express } from "express";
-import { openApiSpec } from "./docs/openapi";
-import { auth } from "./lib/auth";
-import { router as batchRouter } from "./routes/batch.routes";
-import { router as paymentRouter } from "./routes/payment.routes";
-import { router as trackingRouter } from "./routes/tracking.routes";
+import { openApiSpec } from "./docs/openapi.ts";
+import { auth } from "./lib/auth.ts";
+import { router as batchRouter } from "./routes/batch.routes.ts";
+import { router as paymentRouter } from "./routes/payment.routes.ts";
+import { router as trackingRouter } from "./routes/tracking.routes.ts";
 
 const app: Express = express();
 const port = process.env.PORT || 3005;
@@ -26,19 +26,15 @@ app.use(
 );
 
 // Scalar API Documentation
-app.get("/openapi.json", (_req, res) => {
-	res.json(openApiSpec);
-});
-
-app.use(
-	"/reference",
-	apiReference({
-		theme: "purple",
-		spec: {
-			content: openApiSpec,
-		},
-	}),
-);
+if (process.env.NODE_ENV !== "production") {
+	app.get("/openapi.json", (_req, res) => {
+		res.json(openApiSpec);
+	});
+	app.use(
+		"/reference",
+		apiReference({ theme: "purple", spec: { content: openApiSpec } }),
+	);
+}
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 

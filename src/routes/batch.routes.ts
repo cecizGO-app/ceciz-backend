@@ -1,4 +1,4 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 import {
 	createBatch,
 	deleteBatchId,
@@ -6,9 +6,9 @@ import {
 	getBatchId,
 	getBatchStats,
 	patchBatch,
-} from "@/controllers/batch.controller";
-import { requireAuth } from "@/middleware/requireAuth";
-import { requireRole } from "@/middleware/requireRole";
+} from "../controllers/batch.controller.js";
+import { requireAuth } from "../middleware/requireAuth.js";
+import { requireRole } from "../middleware/requireRole.js";
 
 export const router: Router = Router();
 

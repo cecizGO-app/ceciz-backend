@@ -1,17 +1,17 @@
-import type { Request, Response } from "express";
+﻿import type { Request, Response } from "express";
 import { ZodError } from "zod";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "../generated/prisma/client.js";
 import {
 	BatchStatus,
 	CountryCode,
 	TrackingStatus,
-} from "@/generated/prisma/enums";
-import { prisma } from "@/lib/prisma";
+} from "../generated/prisma/enums.js";
+import { prisma } from "../lib/prisma.js";
 import {
 	createBatchSchema,
 	getBatchQuerySchema,
 	updateBatchSchema,
-} from "@/schemas/batch.schema";
+} from "../schemas/batch.schema.js";
 
 // Create Batch Admin
 export const createBatch = async (req: Request, res: Response) => {

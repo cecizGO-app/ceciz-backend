@@ -1,11 +1,11 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 import {
 	getAllTracking,
 	getTrackingByBatchId,
 	updateTracking,
-} from "@/controllers/tracking.controller";
-import { requireAuth } from "@/middleware/requireAuth";
-import { requireRole } from "@/middleware/requireRole";
+} from "../controllers/tracking.controller.js";
+import { requireAuth } from "../middleware/requireAuth.js";
+import { requireRole } from "../middleware/requireRole.js";
 
 export const router: Router = Router();
 

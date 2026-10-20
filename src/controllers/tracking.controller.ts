@@ -1,10 +1,10 @@
-import type { Request, Response } from "express";
+﻿import type { Request, Response } from "express";
 import { ZodError } from "zod";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../lib/prisma.js";
 import {
 	getTrackingQuerySchema,
 	updateTrackingSchema,
-} from "@/schemas/tracking.schema";
+} from "../schemas/tracking.schema.js";
 
 // Get Tracking
 export const getAllTracking = async (req: Request, res: Response) => {
