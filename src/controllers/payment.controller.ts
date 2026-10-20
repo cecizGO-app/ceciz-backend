@@ -1,3 +1,4 @@
+/// <reference path="../types/express.d.ts" />
 import type { Request, Response } from "express";
 import { ZodError } from "zod";
 import type { Prisma } from "@/generated/prisma/client";

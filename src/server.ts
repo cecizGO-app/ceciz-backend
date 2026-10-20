@@ -1,3 +1,4 @@
+/// <reference path="./types/express.d.ts" />
 import "dotenv/config";
 import { apiReference } from "@scalar/express-api-reference";
 import { toNodeHandler } from "better-auth/node";
