@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { MulterError } from "multer";
 import { AppError } from "../lib/errors.js";
 import { sendError } from "../lib/response.js";
 
@@ -15,6 +16,10 @@ export function errorHandler(
 ) {
 	if (err instanceof AppError) {
 		return sendError(res, err.statusCode, err.code, err.message, err.details);
+	}
+
+	if (err instanceof MulterError) {
+		return sendError(res, 400, "VALIDATION_ERROR", err.message);
 	}
 
 	// Unknown / unexpected errors

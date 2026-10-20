@@ -198,6 +198,11 @@ export async function getOrders(buyerId: string, query: GetOrdersQuery) {
 
 	// Attach related invoice summary
 	const orderIds = orders.map((o) => o.batchId);
+
+	if (orders.length === 0) {
+		return { data: [], meta: buildMeta(total, query.page, query.limit) };
+	}
+
 	const invoices = await prisma.invoice.findMany({
 		where: { buyerId, batchId: { in: orderIds } },
 		select: {
