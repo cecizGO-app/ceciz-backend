@@ -50,9 +50,13 @@ app.use(paymentRouter);
 
 app.use(trackingRouter);
 
-app.listen(port, () => {
-	console.log(`Server listening on port ${port}`);
-	console.log(
-		`API Documentation available at http://localhost:${port}/reference`,
-	);
-});
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+	app.listen(port, () => {
+		console.log(`Server listening on port ${port}`);
+		console.log(
+			`API Documentation available at http://localhost:${port}/reference`,
+		);
+	});
+}
+
+export default app;
