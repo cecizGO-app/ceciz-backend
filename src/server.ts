@@ -1,14 +1,13 @@
-/// <reference path="./types/express.d.ts" />
 import "dotenv/config";
 import { apiReference } from "@scalar/express-api-reference";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express, { type Express } from "express";
-import { openApiSpec } from "@/docs/openapi";
-import { auth } from "@/lib/auth";
-import { router as batchRouter } from "@/routes/batch.routes";
-import { router as paymentRouter } from "@/routes/payment.routes";
-import { router as trackingRouter } from "@/routes/tracking.routes";
+import { openApiSpec } from "./docs/openapi";
+import { auth } from "./lib/auth";
+import { router as batchRouter } from "./routes/batch.routes";
+import { router as paymentRouter } from "./routes/payment.routes";
+import { router as trackingRouter } from "./routes/tracking.routes";
 
 const app: Express = express();
 const port = process.env.PORT || 3005;
