@@ -25,15 +25,19 @@ app.use(
 	}),
 );
 
+app.get("/", (_req, res) => {
+    res.json({ status: "ok" });
+});
+
 // Scalar API Documentation
-if (process.env.NODE_ENV !== "production") {
-	app.get("/openapi.json", (_req, res) => {
-		res.json(openApiSpec);
-	});
-	app.use(
-		"/reference",
-		apiReference({ theme: "purple", spec: { content: openApiSpec } }),
-	);
+if (process.env.ENABLE_DOCS !== "false") {
+    app.get("/openapi.json", (_req, res) => {
+        res.json(openApiSpec);
+    });
+    app.use(
+        "/reference",
+        apiReference({ theme: "purple", spec: { content: openApiSpec } }),
+    );
 }
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
