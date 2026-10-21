@@ -5,8 +5,8 @@
   "description": "",
   "main": "src/server.ts",
   "scripts": {
-  "build": "prisma generate && tsc --noEmit",
-  "start": "tsx src/server.ts",
+  "build": "prisma generate && tsup",
+  "start": "node dist/server.js",
   "dev": "tsx watch src/server.ts",
   "db:generate": "prisma generate",
   "db:migrate": "prisma migrate dev",

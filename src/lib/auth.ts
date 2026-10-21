@@ -7,10 +7,12 @@ export const auth = betterAuth({
 		provider: "postgresql",
 	}),
 	trustedOrigins: [
-		"http://localhost:3000",
-		"http://localhost:5173",
-		process.env.FRONTEND_ORIGIN || "",
-	].filter(Boolean),
+		process.env.NODE_ENV !== "production" && "http://localhost:5173",
+		process.env.FRONTEND_ADMIN_URL,
+		process.env.FRONTEND_BUYER_URL,
+	]
+		.filter(Boolean)
+		.flatMap((url) => (url as string).split(",").map((s) => s.trim())),
 	user: {
 		additionalFields: {
 			role: {
