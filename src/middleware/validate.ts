@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import type { ZodSchema } from "zod";
+import type { ZodType } from "zod";
 import { sendError } from "../lib/response.js";
 
 type ValidateTarget = "body" | "query" | "params";
@@ -8,7 +8,7 @@ type ValidateTarget = "body" | "query" | "params";
  * Zod validation middleware factory.
  * Usage: validate("body", mySchema)
  */
-export function validate<T>(target: ValidateTarget, schema: ZodSchema<T>) {
+export function validate(target: ValidateTarget, schema: ZodType) {
 	return (req: Request, res: Response, next: NextFunction) => {
 		const result = schema.safeParse(req[target]);
 		if (!result.success) {

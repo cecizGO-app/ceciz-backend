@@ -110,7 +110,8 @@ model User {
   role          Role      @default(BUYER)
   contact       String?
   address       String?
-  idLine        String? 
+  idLine        String?
+  isOnboarded   Boolean   @default(false)
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -130,6 +131,7 @@ model User {
   administeredBatches  Batch[]         @relation("AdminNyelem")
   cashflowEntries      CashflowEntry[]
   notifications        Notification[]
+  pushSubscriptions    PushSubscription[]
 
   @@map("user")
 }
@@ -367,6 +369,8 @@ model TaxPayment {
   amount                Decimal            @db.Decimal(14, 2)
   paymentMethod         PaymentMethod
   taxVerificationStatus VerificationStatus @default(PENDING)
+  paymentDate           DateTime?
+  rejectReason          String?
   verifiedById          String?
   verifiedBy            User?              @relation("VerifiedTaxPayments", fields: [verifiedById], references: [id])
   verifiedAt            DateTime?
@@ -469,8 +473,25 @@ model Setting {
   taxRateNonPcPerGram Decimal? @db.Decimal(12, 2)
   feeRekapTiers       Json     // [{ "min_pcs": 1, "max_pcs": 1, "fee": 2000 }, ...]
   maxStorageDays      Int      @default(60)
+  csContact             String?
 
   updatedAt           DateTime @updatedAt
 
   @@map("settings")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  buyerId   String
+  buyer     User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([buyerId])
+  @@map("push_subscriptions")
 }
