@@ -1,4 +1,4 @@
-﻿export const openApiSpec = {
+export const openApiSpec = {
 	openapi: "3.1.0",
 	info: {
 		title: "Ceciz GO - Backend API",
@@ -37,6 +37,35 @@
 		{
 			name: "Storage & Upload",
 			description: "Unggah file dan gambar ke Cloudflare R2 storage",
+		},
+		{
+			name: "Buyer - Batches",
+			description: "Katalog batch pesanan yang dibuka untuk buyer",
+		},
+		{
+			name: "Buyer - Orders",
+			description: "Pemesanan item batch dan riwayat order buyer",
+		},
+		{
+			name: "Buyer - Invoices",
+			description: "Daftar dan rincian tagihan invoice pemesanan buyer",
+		},
+		{
+			name: "Buyer - Payments",
+			description: "Unggah bukti bayar dan riwayat pembayaran invoice batch",
+		},
+		{
+			name: "Buyer - Tax",
+			description:
+				"Tagihan pajak (tax invoice) dan konfirmasi pembayaran pajak",
+		},
+		{
+			name: "Buyer - Profile",
+			description: "Profil data diri dan status onboarding buyer",
+		},
+		{
+			name: "Content",
+			description: "Konten publik, bantuan FAQ, dan kontak Customer Service",
 		},
 	],
 	components: {
@@ -353,6 +382,105 @@
 								message: { type: "string", example: "Judul batch wajib diisi" },
 							},
 						},
+					},
+				},
+			},
+			OrderStatus: {
+				type: "string",
+				enum: ["PENDING", "CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED"],
+				description: "Status lifecycle pemesanan order buyer",
+			},
+			InvoiceStatus: {
+				type: "string",
+				enum: [
+					"UNPAID",
+					"AWAITING_VERIFICATION",
+					"PAID",
+					"OVERDUE",
+					"CANCELLED",
+				],
+				description: "Status tagihan invoice batch",
+			},
+			TaxInvoiceStatus: {
+				type: "string",
+				enum: [
+					"UNPAID",
+					"AWAITING_VERIFICATION",
+					"PAID",
+					"OVERDUE",
+					"CANCELLED",
+				],
+				description: "Status tagihan pajak (tax invoice)",
+			},
+			CreateOrderRequest: {
+				type: "object",
+				required: ["batch_id", "item_qty"],
+				properties: {
+					batch_id: {
+						type: "string",
+						description: "ID batch yang ingin dipesan",
+						example: "clx123abc",
+					},
+					item_qty: {
+						type: "integer",
+						minimum: 1,
+						description: "Jumlah item yang dipesan",
+						example: 2,
+					},
+				},
+			},
+			UploadBuyerPaymentRequest: {
+				type: "object",
+				required: ["proof", "amount", "payment_method", "payment_date"],
+				properties: {
+					proof: {
+						type: "string",
+						format: "binary",
+						description:
+							"File gambar bukti transfer (JPEG, PNG, atau WEBP, maks 5MB)",
+					},
+					amount: {
+						type: "number",
+						description: "Nominal pembayaran dalam integer Rupiah",
+						example: 150000,
+					},
+					payment_method: {
+						type: "string",
+						enum: ["BCA", "QRIS", "SEABANK", "SPAY"],
+						description: "Metode transfer",
+						example: "BCA",
+					},
+					payment_date: {
+						type: "string",
+						format: "date-time",
+						description:
+							"Tanggal dan jam transfer dilakukan (tidak boleh masa depan)",
+						example: "2026-10-21T10:00:00.000Z",
+					},
+				},
+			},
+			UpdateProfileRequest: {
+				type: "object",
+				properties: {
+					name: {
+						type: "string",
+						description: "Nama lengkap pembeli",
+						example: "Yudha Pratama",
+					},
+					contact: {
+						type: "string",
+						description: "Nomor WhatsApp atau nomor telepon",
+						example: "081234567890",
+					},
+					idLine: {
+						type: "string",
+						description: "ID LINE pembeli",
+						example: "yudha_line",
+					},
+					address: {
+						type: "string",
+						description: "Alamat lengkap pengiriman",
+						example: "Jl. Sudirman No. 45, Jakarta Selatan",
 					},
 				},
 			},
@@ -1035,6 +1163,465 @@
 				responses: {
 					"200": { description: "Pembayaran berhasil diperbarui" },
 					"400": { description: "Validasi data gagal" },
+				},
+			},
+		},
+		"/api/v1/buyer/batches": {
+			get: {
+				tags: ["Buyer - Batches"],
+				summary: "Katalog Batch Tersedia untuk Buyer",
+				description:
+					"Mendapatkan daftar batch yang sedang dibuka (OPEN) untuk dipesan oleh buyer. Mendukung filter negara dan paginasi.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+						description: "Halaman data",
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+						description: "Jumlah data per halaman",
+					},
+					{
+						name: "country_code",
+						in: "query",
+						required: false,
+						schema: { $ref: "#/components/schemas/CountryCode" },
+						description: "Filter batch berdasarkan kode negara",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar batch untuk buyer" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/batches/{id}": {
+			get: {
+				tags: ["Buyer - Batches"],
+				summary: "Detail Batch untuk Buyer",
+				description:
+					"Mengambil data detail batch, status, kurs harian, dan estimasi waktu.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID batch",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil detail batch" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Batch tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/buyer/orders": {
+			post: {
+				tags: ["Buyer - Orders"],
+				summary: "Pesan Item Batch (Buat / Update Order)",
+				description:
+					"Membuat pesanan baru atau memperbarui jumlah item yang dipesan pada batch tertentu. Secara otomatis membuat atau memperbarui tagihan invoice.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/CreateOrderRequest" },
+						},
+					},
+				},
+				responses: {
+					"201": {
+						description: "Order dan invoice berhasil dibuat/diperbarui",
+					},
+					"400": { description: "Validasi data gagal" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"409": {
+						description:
+							"Pembayaran invoice sudah disetujui, order tidak dapat diubah",
+					},
+				},
+			},
+			get: {
+				tags: ["Buyer - Orders"],
+				summary: "Daftar Riwayat Pesanan Buyer",
+				description:
+					"Mendapatkan riwayat pesanan milik buyer yang sedang login dengan filter status dan paginasi.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+					},
+					{
+						name: "status",
+						in: "query",
+						required: false,
+						schema: { $ref: "#/components/schemas/OrderStatus" },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil riwayat order" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/orders/{id}": {
+			get: {
+				tags: ["Buyer - Orders"],
+				summary: "Detail Pesanan Buyer Berdasarkan ID",
+				description: "Mengambil detail pesanan spesifik milik buyer.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID order",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil detail order" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Order tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/buyer/invoices": {
+			get: {
+				tags: ["Buyer - Invoices"],
+				summary: "Daftar Tagihan (Invoices) Buyer",
+				description:
+					"Mendapatkan daftar invoice pesanan batch milik buyer beserta status pelunasan dan kalkulasi denda jika melewati deadline.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+					},
+					{
+						name: "status",
+						in: "query",
+						required: false,
+						schema: { $ref: "#/components/schemas/InvoiceStatus" },
+					},
+					{
+						name: "batch_id",
+						in: "query",
+						required: false,
+						schema: { type: "string" },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar tagihan invoice" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/invoices/{id}": {
+			get: {
+				tags: ["Buyer - Invoices"],
+				summary: "Detail Tagihan Invoice Buyer",
+				description:
+					"Mengambil rincian invoice, item pesanan, batas waktu (deadline), denda keterlambatan (jika ada), dan status pembayaran.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID invoice",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil detail invoice" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Invoice tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/buyer/invoices/{id}/payments": {
+			post: {
+				tags: ["Buyer - Payments"],
+				summary: "Unggah Bukti Bayar Tagihan Invoice",
+				description:
+					"Mengunggah foto bukti transfer untuk invoice pesanan batch. File gambar (JPG, PNG, WEBP, maks 5MB) diunggah via form-data. Status tagihan otomatis menjadi AWAITING_VERIFICATION.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID invoice",
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"multipart/form-data": {
+							schema: {
+								$ref: "#/components/schemas/UploadBuyerPaymentRequest",
+							},
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Bukti bayar berhasil diunggah" },
+					"400": { description: "Validasi file atau data transfer gagal" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Invoice tidak ditemukan" },
+					"409": {
+						description:
+							"Sudah ada pembayaran yang menunggu verifikasi atau sudah lunas",
+					},
+				},
+			},
+			get: {
+				tags: ["Buyer - Payments"],
+				summary: "Riwayat Bukti Pembayaran Invoice",
+				description:
+					"Melihat riwayat pembayaran yang telah diunggah untuk invoice tertentu beserta status verifikasinya oleh admin.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID invoice",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil riwayat pembayaran" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Invoice tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/buyer/taxes": {
+			get: {
+				tags: ["Buyer - Tax"],
+				summary: "Daftar Tagihan Pajak (Tax Invoices)",
+				description:
+					"Mendapatkan daftar tagihan pajak untuk batch yang diikuti buyer setelah paket tiba di warehouse Indonesia.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+					},
+					{
+						name: "status",
+						in: "query",
+						required: false,
+						schema: { $ref: "#/components/schemas/TaxInvoiceStatus" },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar tagihan pajak" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/taxes/{id}": {
+			get: {
+				tags: ["Buyer - Tax"],
+				summary: "Detail Tagihan Pajak",
+				description:
+					"Mengambil rincian tagihan pajak, rincian item, batas waktu, dan status pembayaran.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID tagihan pajak (Tax Invoice ID)",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil detail tagihan pajak" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Tagihan pajak tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/buyer/taxes/{id}/payments": {
+			post: {
+				tags: ["Buyer - Tax"],
+				summary: "Unggah Bukti Bayar Tagihan Pajak",
+				description:
+					"Mengunggah file foto bukti transfer untuk tagihan pajak batch. Status otomatis berubah ke AWAITING_VERIFICATION.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID tagihan pajak (Tax Invoice ID)",
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"multipart/form-data": {
+							schema: {
+								$ref: "#/components/schemas/UploadBuyerPaymentRequest",
+							},
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Bukti bayar pajak berhasil diunggah" },
+					"400": { description: "Validasi data gagal" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Tagihan pajak tidak ditemukan" },
+					"409": {
+						description: "Sudah ada pembayaran pajak yang menunggu verifikasi",
+					},
+				},
+			},
+			get: {
+				tags: ["Buyer - Tax"],
+				summary: "Riwayat Pembayaran Tagihan Pajak",
+				description:
+					"Melihat riwayat pembayaran dan status persetujuan bukti bayar tagihan pajak tertentu.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID tagihan pajak",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil riwayat pembayaran pajak" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Tagihan pajak tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/buyer/me": {
+			get: {
+				tags: ["Buyer - Profile"],
+				summary: "Profil Akun Buyer Saat Ini",
+				description:
+					"Mengambil data profil buyer termasuk status onboarding, nomor kontak, ID Line, dan alamat.",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil data profil buyer" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+			patch: {
+				tags: ["Buyer - Profile"],
+				summary: "Perbarui Data Profil Buyer",
+				description:
+					"Memperbarui nama, kontak WhatsApp, ID Line, dan alamat pengiriman milik buyer.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/UpdateProfileRequest" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Profil berhasil diperbarui" },
+					"400": { description: "Validasi data gagal" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/me/onboarding": {
+			patch: {
+				tags: ["Buyer - Profile"],
+				summary: "Selesaikan Alur Onboarding",
+				description:
+					"Menandai status bahwa buyer telah menyelesaikan tur/panduan onboarding aplikasi.",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Status onboarding berhasil disimpan" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/content/cs-contact": {
+			get: {
+				tags: ["Content"],
+				summary: "Kontak Customer Service",
+				description:
+					"Mendapatkan tautan atau nomor kontak Customer Service resmi dari database setting tanpa perlu autentikasi.",
+				responses: {
+					"200": { description: "Berhasil mengambil kontak CS" },
+				},
+			},
+		},
+		"/api/v1/content/faq": {
+			get: {
+				tags: ["Content"],
+				summary: "Daftar Pertanyaan Umum (FAQ)",
+				description:
+					"Mengambil daftar FAQ seputar cara order, pembayaran, tracking, tagihan pajak, dan checkout Shopee.",
+				responses: {
+					"200": { description: "Berhasil mengambil daftar FAQ" },
 				},
 			},
 		},

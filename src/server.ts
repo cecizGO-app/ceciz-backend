@@ -7,9 +7,16 @@ import { openApiSpec } from "./docs/openapi.js";
 import { auth } from "./lib/auth.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
-import { batchesRouter } from "./modules/admin/batches/batches.routes.js";
-import { paymentsRouter } from "./modules/admin/payments/payments.routes.js";
-import { trackingRouter } from "./modules/admin/tracking/tracking.routes.js";
+import { batchesRouter as adminBatchesRouter } from "./modules/admin/batches/batches.routes.js";
+import { paymentsRouter as adminPaymentsRouter } from "./modules/admin/payments/payments.routes.js";
+import { trackingRouter as adminTrackingRouter } from "./modules/admin/tracking/tracking.routes.js";
+import { batchesRouter as buyerBatchesRouter } from "./modules/buyer/batches/batches.routes.js";
+import { invoicesRouter as buyerInvoicesRouter } from "./modules/buyer/invoices/invoices.routes.js";
+import { ordersRouter as buyerOrdersRouter } from "./modules/buyer/orders/orders.routes.js";
+import { paymentsRouter as buyerPaymentsRouter } from "./modules/buyer/payments/payments.routes.js";
+import { profileRouter as buyerProfileRouter } from "./modules/buyer/profile/profile.routes.js";
+import { taxRouter as buyerTaxRouter } from "./modules/buyer/tax/tax.routes.js";
+import { contentRouter } from "./modules/content/content.routes.js";
 
 const app: Express = express();
 const port = process.env.PORT || 3005;
@@ -46,9 +53,21 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 
 app.use(express.json());
 
-app.use(batchesRouter);
-app.use(paymentsRouter);
-app.use(trackingRouter);
+// Admin Routes
+app.use(adminBatchesRouter);
+app.use(adminPaymentsRouter);
+app.use(adminTrackingRouter);
+
+// Buyer Routes
+app.use(buyerBatchesRouter);
+app.use(buyerInvoicesRouter);
+app.use(buyerOrdersRouter);
+app.use(buyerPaymentsRouter);
+app.use(buyerProfileRouter);
+app.use(buyerTaxRouter);
+
+// Content & Public Routes
+app.use(contentRouter);
 
 app.use(notFound);
 app.use(errorHandler);
