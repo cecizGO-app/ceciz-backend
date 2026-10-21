@@ -1,5 +1,5 @@
-import { AppError } from "../../../lib/errors.js";
-import { prisma } from "../../../lib/prisma.js";
+import { AppError } from "@/lib/errors";
+import { prisma } from "@/lib/prisma";
 import type {
 	GetTrackingQueryInput,
 	UpdateTrackingInput,

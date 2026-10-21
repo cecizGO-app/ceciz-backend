@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { OrderStatus } from "../../../generated/prisma/enums.js";
-import { paginationSchema } from "../../../lib/pagination.js";
+import { OrderStatus } from "@/generated/prisma/enums";
+import { paginationSchema } from "@/lib/pagination";
 
 export const createOrderSchema = z
 	.object({

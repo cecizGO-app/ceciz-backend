@@ -1,10 +1,10 @@
-import { VerificationStatus } from "../../../generated/prisma/enums.js";
-import { AppError } from "../../../lib/errors.js";
-import { buildMeta, getPaginationArgs } from "../../../lib/pagination.js";
-import { prisma } from "../../../lib/prisma.js";
-import { uploadToR2 } from "../../../lib/r2.js";
-import { calcPenalty } from "../../../services/penalty.service.js";
-import { validateImageMime } from "../payments/upload.middleware.js";
+import { VerificationStatus } from "@/generated/prisma/enums";
+import { AppError } from "@/lib/errors";
+import { buildMeta, getPaginationArgs } from "@/lib/pagination";
+import { prisma } from "@/lib/prisma";
+import { uploadToR2 } from "@/lib/r2";
+import { validateImageMime } from "@/modules/buyer/payments/upload.middleware";
+import { calcPenalty } from "@/services/penalty.service";
 import type {
 	GetTaxInvoicesQuery,
 	UploadTaxPaymentInput,

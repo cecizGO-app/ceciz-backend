@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { AppError } from "../../../lib/errors.js";
-import { sendCreated, sendSuccess } from "../../../lib/response.js";
+import { AppError } from "@/lib/errors";
+import { sendCreated, sendSuccess } from "@/lib/response";
 import { createOrder, getOrderById, getOrders } from "./orders.service.js";
 
 export async function handleCreateOrder(req: Request, res: Response) {

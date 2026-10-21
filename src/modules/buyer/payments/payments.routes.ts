@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { requireAuth } from "../../../middleware/requireAuth.js";
-import { requireBuyer } from "../../../middleware/requireBuyer.js";
+import { requireAuth } from "@/middleware/requireAuth";
+import { requireRole } from "@/middleware/requireRole";
 import {
 	handleGetBatchPayments,
 	handleUploadPayment,
@@ -12,7 +12,7 @@ export const paymentsRouter: Router = Router();
 paymentsRouter.post(
 	"/api/v1/buyer/invoices/:id/payments",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	uploadPaymentProof,
 	handleUploadPayment,
 );
@@ -20,6 +20,6 @@ paymentsRouter.post(
 paymentsRouter.get(
 	"/api/v1/buyer/invoices/:id/payments",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	handleGetBatchPayments,
 );

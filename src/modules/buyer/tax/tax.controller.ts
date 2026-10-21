@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { AppError } from "../../../lib/errors.js";
-import { sendCreated, sendSuccess } from "../../../lib/response.js";
+import { AppError } from "@/lib/errors";
+import { sendCreated, sendSuccess } from "@/lib/response";
 import { uploadTaxPaymentSchema } from "./tax.schema.js";
 import {
 	getTaxInvoiceById,

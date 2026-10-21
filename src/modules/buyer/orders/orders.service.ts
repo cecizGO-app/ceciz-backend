@@ -3,10 +3,10 @@ import {
 	InvoiceStatus,
 	NotificationChannel,
 	NotificationType,
-} from "../../../generated/prisma/enums.js";
-import { AppError } from "../../../lib/errors.js";
-import { buildMeta, getPaginationArgs } from "../../../lib/pagination.js";
-import { prisma } from "../../../lib/prisma.js";
+} from "@/generated/prisma/enums";
+import { AppError } from "@/lib/errors";
+import { buildMeta, getPaginationArgs } from "@/lib/pagination";
+import { prisma } from "@/lib/prisma";
 import type { CreateOrderInput, GetOrdersQuery } from "./orders.schema.js";
 
 export async function createOrder(buyerId: string, input: CreateOrderInput) {

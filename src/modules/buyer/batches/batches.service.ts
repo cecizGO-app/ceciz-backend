@@ -1,6 +1,6 @@
-import { CountryCode } from "../../../generated/prisma/enums.js";
-import { buildMeta, getPaginationArgs } from "../../../lib/pagination.js";
-import { prisma } from "../../../lib/prisma.js";
+import { CountryCode } from "@/generated/prisma/enums";
+import { buildMeta, getPaginationArgs } from "@/lib/pagination";
+import { prisma } from "@/lib/prisma";
 import type { GetBuyerBatchesQuery } from "./batches.schema.js";
 
 export async function getBuyerBatches(query: GetBuyerBatchesQuery) {

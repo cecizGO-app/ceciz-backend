@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { requireAuth } from "../../../middleware/requireAuth.js";
-import { requireBuyer } from "../../../middleware/requireBuyer.js";
-import { validate } from "../../../middleware/validate.js";
+import { requireAuth } from "@/middleware/requireAuth";
+import { requireRole } from "@/middleware/requireRole";
+import { validate } from "@/middleware/validate";
 import {
 	handleGetProfile,
 	handleOnboarding,
@@ -14,14 +14,14 @@ export const profileRouter: Router = Router();
 profileRouter.get(
 	"/api/v1/buyer/me",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	handleGetProfile,
 );
 
 profileRouter.patch(
 	"/api/v1/buyer/me",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	validate("body", updateProfileSchema),
 	handleUpdateProfile,
 );
@@ -29,6 +29,6 @@ profileRouter.patch(
 profileRouter.patch(
 	"/api/v1/buyer/me/onboarding",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	handleOnboarding,
 );

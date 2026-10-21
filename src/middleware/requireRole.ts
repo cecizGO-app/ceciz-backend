@@ -1,6 +1,6 @@
-﻿/// <reference path="../types/express.d.ts" />
+/// <reference path="../types/express.d.ts" />
 import type { NextFunction, Request, Response } from "express";
-import type { Role } from "../generated/prisma/enums.js";
+import type { Role } from "@/generated/prisma/enums";
 
 export const requireRole = (allowedRoles: Role[]) => {
 	return (req: Request, res: Response, next: NextFunction) => {

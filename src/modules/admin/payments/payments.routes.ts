@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { requireAuth } from "../../../middleware/requireAuth.js";
-import { requireRole } from "../../../middleware/requireRole.js";
-import { uploadImage } from "../../../middleware/upload.js";
-import { validate } from "../../../middleware/validate.js";
+import { requireAuth } from "@/middleware/requireAuth";
+import { requireRole } from "@/middleware/requireRole";
+import { uploadImage } from "@/middleware/upload";
+import { validate } from "@/middleware/validate";
 import {
 	handleBulkVerifyPayments,
 	handleCreatePayment,

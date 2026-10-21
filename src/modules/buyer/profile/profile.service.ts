@@ -1,4 +1,4 @@
-import { prisma } from "../../../lib/prisma.js";
+import { prisma } from "@/lib/prisma";
 import type { UpdateProfileInput } from "./profile.schema.js";
 
 export async function getProfile(buyerId: string) {

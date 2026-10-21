@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { AppError } from "../../../lib/errors.js";
-import { sendSuccess } from "../../../lib/response.js";
+import { AppError } from "@/lib/errors";
+import { sendSuccess } from "@/lib/response";
 import { getProfile, setOnboarded, updateProfile } from "./profile.service.js";
 
 export async function handleGetProfile(req: Request, res: Response) {

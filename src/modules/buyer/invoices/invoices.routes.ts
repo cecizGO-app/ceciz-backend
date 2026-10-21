@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { requireAuth } from "../../../middleware/requireAuth.js";
-import { requireBuyer } from "../../../middleware/requireBuyer.js";
-import { validate } from "../../../middleware/validate.js";
+import { requireAuth } from "@/middleware/requireAuth";
+import { requireRole } from "@/middleware/requireRole";
+import { validate } from "@/middleware/validate";
 import {
 	handleGetInvoiceById,
 	handleGetInvoices,
@@ -13,7 +13,7 @@ export const invoicesRouter: Router = Router();
 invoicesRouter.get(
 	"/api/v1/buyer/invoices",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	validate("query", getInvoicesQuerySchema),
 	handleGetInvoices,
 );
@@ -21,6 +21,6 @@ invoicesRouter.get(
 invoicesRouter.get(
 	"/api/v1/buyer/invoices/:id",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	handleGetInvoiceById,
 );

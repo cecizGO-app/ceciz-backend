@@ -1,7 +1,7 @@
-import { CountryCode } from "../../../generated/prisma/enums.js";
-import { buildMeta, getPaginationArgs } from "../../../lib/pagination.js";
-import { prisma } from "../../../lib/prisma.js";
-import { calcPenalty } from "../../../services/penalty.service.js";
+import { CountryCode } from "@/generated/prisma/enums";
+import { buildMeta, getPaginationArgs } from "@/lib/pagination";
+import { prisma } from "@/lib/prisma";
+import { calcPenalty } from "@/services/penalty.service";
 import type { GetInvoicesQuery } from "./invoices.schema.js";
 
 async function getPenaltyPerDay(): Promise<number> {

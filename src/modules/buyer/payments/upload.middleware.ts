@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
 import multer from "multer";
-import { AppError } from "../../../lib/errors.js";
+import { AppError } from "@/lib/errors";
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB

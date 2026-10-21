@@ -1,10 +1,7 @@
-import {
-	CountryCode,
-	VerificationStatus,
-} from "../../../generated/prisma/enums.js";
-import { AppError } from "../../../lib/errors.js";
-import { prisma } from "../../../lib/prisma.js";
-import { uploadToR2 } from "../../../lib/r2.js";
+import { CountryCode, VerificationStatus } from "@/generated/prisma/enums";
+import { AppError } from "@/lib/errors";
+import { prisma } from "@/lib/prisma";
+import { uploadToR2 } from "@/lib/r2";
 import type { UploadPaymentInput } from "./payments.schema.js";
 import { validateImageMime } from "./upload.middleware.js";
 

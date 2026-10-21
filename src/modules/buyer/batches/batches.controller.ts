@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { AppError } from "../../../lib/errors.js";
-import { sendSuccess } from "../../../lib/response.js";
+import { AppError } from "@/lib/errors";
+import { sendSuccess } from "@/lib/response";
 import { getBuyerBatchById, getBuyerBatches } from "./batches.service.js";
 
 export async function handleGetBuyerBatches(req: Request, res: Response) {

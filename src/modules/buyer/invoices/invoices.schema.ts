@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { InvoiceStatus } from "../../../generated/prisma/enums.js";
-import { paginationSchema } from "../../../lib/pagination.js";
+import { InvoiceStatus } from "@/generated/prisma/enums";
+import { paginationSchema } from "@/lib/pagination";
 
 export const getInvoicesQuerySchema = paginationSchema.extend({
 	status: z.enum(InvoiceStatus).optional(),

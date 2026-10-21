@@ -4,13 +4,16 @@
     // File Layout
     "rootDir": ".",
     "outDir": "./dist",
+    "paths" : {
+      "@/*" : ["./src/*"]
+    },
   
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
+    "module": "esnext",
     "target": "esnext",
-    "moduleResolution": "nodenext",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "ignoreDeprecations": "6.0",
 

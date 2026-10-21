@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { AppError } from "../../../lib/errors.js";
-import { sendSuccess } from "../../../lib/response.js";
+import { AppError } from "@/lib/errors";
+import { sendSuccess } from "@/lib/response";
 import { getInvoiceById, getInvoices } from "./invoices.service.js";
 
 export async function handleGetInvoices(req: Request, res: Response) {

@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { requireAuth } from "../../../middleware/requireAuth.js";
-import { requireBuyer } from "../../../middleware/requireBuyer.js";
-import { validate } from "../../../middleware/validate.js";
+import { requireAuth } from "@/middleware/requireAuth";
+import { requireRole } from "@/middleware/requireRole";
+import { validate } from "@/middleware/validate";
 import {
 	handleCreateOrder,
 	handleGetOrderById,
@@ -14,7 +14,7 @@ export const ordersRouter: Router = Router();
 ordersRouter.post(
 	"/api/v1/buyer/orders",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	validate("body", createOrderSchema),
 	handleCreateOrder,
 );
@@ -22,7 +22,7 @@ ordersRouter.post(
 ordersRouter.get(
 	"/api/v1/buyer/orders",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	validate("query", getOrdersQuerySchema),
 	handleGetOrders,
 );
@@ -30,6 +30,6 @@ ordersRouter.get(
 ordersRouter.get(
 	"/api/v1/buyer/orders/:id",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	handleGetOrderById,
 );

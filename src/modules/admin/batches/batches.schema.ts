@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BatchStatus, CountryCode } from "../../../generated/prisma/enums.js";
+import { BatchStatus, CountryCode } from "@/generated/prisma/enums";
 
 export const batchItemInputSchema = z.object({
 	buyerId: z.string().trim().min(1, "Buyer ID wajib diisi"),

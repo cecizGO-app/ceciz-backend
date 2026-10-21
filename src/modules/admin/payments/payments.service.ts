@@ -1,14 +1,14 @@
-import type { Prisma } from "../../../generated/prisma/client.js";
+import type { Prisma } from "@/generated/prisma/client";
 import {
 	CountryCode,
 	InvoiceStatus,
 	NotificationChannel,
 	NotificationType,
 	VerificationStatus,
-} from "../../../generated/prisma/enums.js";
-import { AppError } from "../../../lib/errors.js";
-import { prisma } from "../../../lib/prisma.js";
-import { uploadToR2 } from "../../../lib/r2.js";
+} from "@/generated/prisma/enums";
+import { AppError } from "@/lib/errors";
+import { prisma } from "@/lib/prisma";
+import { uploadToR2 } from "@/lib/r2";
 import type {
 	BulkVerifyPaymentInput,
 	CreatePaymentInput,

@@ -1,11 +1,11 @@
-import type { Prisma } from "../../../generated/prisma/client.js";
+import type { Prisma } from "@/generated/prisma/client";
 import {
 	BatchStatus,
 	CountryCode,
 	TrackingStatus,
-} from "../../../generated/prisma/enums.js";
-import { AppError } from "../../../lib/errors.js";
-import { prisma } from "../../../lib/prisma.js";
+} from "@/generated/prisma/enums";
+import { AppError } from "@/lib/errors";
+import { prisma } from "@/lib/prisma";
 import type {
 	CreateBatchInput,
 	GetBatchQueryInput,

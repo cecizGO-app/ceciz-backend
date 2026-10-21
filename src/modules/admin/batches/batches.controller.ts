@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { sendCreated, sendSuccess } from "../../../lib/response.js";
+import { sendCreated, sendSuccess } from "@/lib/response";
 import type {
 	CreateBatchInput,
 	GetBatchQueryInput,

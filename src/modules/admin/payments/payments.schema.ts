@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-	PaymentMethod,
-	VerificationStatus,
-} from "../../../generated/prisma/enums.js";
+import { PaymentMethod, VerificationStatus } from "@/generated/prisma/enums";
 
 export const getPaymentQuerySchema = z.object({
 	status: z.enum(VerificationStatus).optional(),

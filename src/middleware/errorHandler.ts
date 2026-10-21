@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { MulterError } from "multer";
-import { AppError } from "../lib/errors.js";
-import { sendError } from "../lib/response.js";
+import { AppError } from "@/lib/errors";
+import { sendError } from "@/lib/response";
 
 const isProd = process.env.NODE_ENV === "production";
 

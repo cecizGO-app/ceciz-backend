@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-	CountryCode,
-	TrackingStatus,
-} from "../../../generated/prisma/enums.js";
+import { CountryCode, TrackingStatus } from "@/generated/prisma/enums";
 
 export const updateTrackingSchema = z.object({
 	trackingStatus: z.enum(TrackingStatus).optional(),

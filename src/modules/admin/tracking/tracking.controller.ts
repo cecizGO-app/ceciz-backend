@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { sendSuccess } from "../../../lib/response.js";
+import { sendSuccess } from "@/lib/response";
 import type {
 	GetTrackingQueryInput,
 	UpdateTrackingInput,

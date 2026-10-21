@@ -1,31 +1,33 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import { apiReference } from "@scalar/express-api-reference";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express, { type Express } from "express";
-import { openApiSpec } from "./docs/openapi.js";
-import { auth } from "./lib/auth.js";
-import { errorHandler } from "./middleware/errorHandler.js";
-import { notFound } from "./middleware/notFound.js";
-import { batchesRouter as adminBatchesRouter } from "./modules/admin/batches/batches.routes.js";
-import { paymentsRouter as adminPaymentsRouter } from "./modules/admin/payments/payments.routes.js";
-import { trackingRouter as adminTrackingRouter } from "./modules/admin/tracking/tracking.routes.js";
-import { batchesRouter as buyerBatchesRouter } from "./modules/buyer/batches/batches.routes.js";
-import { invoicesRouter as buyerInvoicesRouter } from "./modules/buyer/invoices/invoices.routes.js";
-import { ordersRouter as buyerOrdersRouter } from "./modules/buyer/orders/orders.routes.js";
-import { paymentsRouter as buyerPaymentsRouter } from "./modules/buyer/payments/payments.routes.js";
-import { profileRouter as buyerProfileRouter } from "./modules/buyer/profile/profile.routes.js";
-import { taxRouter as buyerTaxRouter } from "./modules/buyer/tax/tax.routes.js";
-import { contentRouter } from "./modules/content/content.routes.js";
+import { openApiSpec } from "@/docs/openapi";
+import { auth } from "@/lib/auth";
+import { errorHandler } from "@/middleware/errorHandler";
+import { notFound } from "@/middleware/notFound";
+import { batchesRouter as adminBatchesRouter } from "@/modules/admin/batches/batches.routes";
+import { paymentsRouter as adminPaymentsRouter } from "@/modules/admin/payments/payments.routes";
+import { trackingRouter as adminTrackingRouter } from "@/modules/admin/tracking/tracking.routes";
+import { batchesRouter as buyerBatchesRouter } from "@/modules/buyer/batches/batches.routes";
+import { invoicesRouter as buyerInvoicesRouter } from "@/modules/buyer/invoices/invoices.routes";
+import { ordersRouter as buyerOrdersRouter } from "@/modules/buyer/orders/orders.routes";
+import { paymentsRouter as buyerPaymentsRouter } from "@/modules/buyer/payments/payments.routes";
+import { profileRouter as buyerProfileRouter } from "@/modules/buyer/profile/profile.routes";
+import { taxRouter as buyerTaxRouter } from "@/modules/buyer/tax/tax.routes";
+import { contentRouter } from "@/modules/content/content.routes";
 
 const app: Express = express();
 const port = process.env.PORT || 3005;
 
 const allowedOrigins = [
-	"http://localhost:3000",
-	"http://localhost:5173",
-	process.env.FRONTEND_URL,
-].filter(Boolean) as string[];
+	process.env.NODE_ENV !== "production" && "http://localhost:5173",
+	process.env.FRONTEND_ADMIN_URL,
+	process.env.FRONTEND_BUYER_URL,
+]
+	.filter(Boolean)
+	.flatMap((url) => (url as string).split(",").map((s) => s.trim()));
 
 app.use(
 	cors({

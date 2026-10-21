@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { requireAuth } from "../../../middleware/requireAuth.js";
-import { requireBuyer } from "../../../middleware/requireBuyer.js";
-import { validate } from "../../../middleware/validate.js";
+import { requireAuth } from "@/middleware/requireAuth";
+import { requireRole } from "@/middleware/requireRole";
+import { validate } from "@/middleware/validate";
 import {
 	handleGetBuyerBatchById,
 	handleGetBuyerBatches,
@@ -13,7 +13,7 @@ export const batchesRouter: Router = Router();
 batchesRouter.get(
 	"/api/v1/buyer/batches",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	validate("query", getBuyerBatchesQuerySchema),
 	handleGetBuyerBatches,
 );
@@ -21,6 +21,6 @@ batchesRouter.get(
 batchesRouter.get(
 	"/api/v1/buyer/batches/:id",
 	requireAuth,
-	requireBuyer,
+	requireRole(["BUYER"]),
 	handleGetBuyerBatchById,
 );
