@@ -1,4 +1,7 @@
-import { CountryCode, VerificationStatus } from "../../../generated/prisma/enums.js";
+import {
+	CountryCode,
+	VerificationStatus,
+} from "../../../generated/prisma/enums.js";
 import { AppError } from "../../../lib/errors.js";
 import { prisma } from "../../../lib/prisma.js";
 import { uploadToR2 } from "../../../lib/r2.js";
@@ -34,7 +37,10 @@ export async function uploadBatchPayment(
 		invoice.batch.countryCode === CountryCode.JP &&
 		Number(invoice.totalAmount) === 0
 	) {
-		throw AppError.conflict("INVOICE_NOT_AVAILABLE", "Menunggu konfirmasi harga dari admin");
+		throw AppError.conflict(
+			"INVOICE_NOT_AVAILABLE",
+			"Menunggu konfirmasi harga dari admin",
+		);
 	}
 
 	// 2. Validate no pending/approved payment

@@ -8,7 +8,7 @@ import {
 } from "./invoices.controller.js";
 import { getInvoicesQuerySchema } from "./invoices.schema.js";
 
-export const invoicesRouter = Router();
+export const invoicesRouter: Router = Router();
 
 invoicesRouter.get(
 	"/api/v1/buyer/invoices",

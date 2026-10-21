@@ -3,7 +3,7 @@ import { CountryCode } from "../../../generated/prisma/enums.js";
 import { paginationSchema } from "../../../lib/pagination.js";
 
 export const getBuyerBatchesQuerySchema = paginationSchema.extend({
-	country_code: z.nativeEnum(CountryCode).optional(),
+	country_code: z.enum(CountryCode).optional(),
 });
 
 export type GetBuyerBatchesQuery = z.infer<typeof getBuyerBatchesQuerySchema>;

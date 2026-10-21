@@ -10,7 +10,7 @@ export const createOrderSchema = z
 	.strict();
 
 export const getOrdersQuerySchema = paginationSchema.extend({
-	status: z.nativeEnum(OrderStatus).optional(),
+	status: z.enum(OrderStatus).optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

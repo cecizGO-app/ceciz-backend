@@ -3,7 +3,7 @@ import { InvoiceStatus } from "../../../generated/prisma/enums.js";
 import { paginationSchema } from "../../../lib/pagination.js";
 
 export const getInvoicesQuerySchema = paginationSchema.extend({
-	status: z.nativeEnum(InvoiceStatus).optional(),
+	status: z.enum(InvoiceStatus).optional(),
 	batch_id: z.string().optional(),
 });
 

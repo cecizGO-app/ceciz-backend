@@ -9,7 +9,7 @@ import {
 } from "./orders.controller.js";
 import { createOrderSchema, getOrdersQuerySchema } from "./orders.schema.js";
 
-export const ordersRouter = Router();
+export const ordersRouter: Router = Router();
 
 ordersRouter.post(
 	"/api/v1/buyer/orders",

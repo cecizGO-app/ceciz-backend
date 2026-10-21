@@ -85,21 +85,18 @@ export async function createOrder(buyerId: string, input: CreateOrderInput) {
 			where: { batchId: input.batch_id, buyerId },
 		});
 
-		let order;
-		if (existingOrder) {
-			order = await tx.order.update({
-				where: { id: existingOrder.id },
-				data: { itemQty: input.item_qty },
-			});
-		} else {
-			order = await tx.order.create({
-				data: {
-					batchId: input.batch_id,
-					buyerId,
-					itemQty: input.item_qty,
-				},
-			});
-		}
+		const order = existingOrder
+			? await tx.order.update({
+					where: { id: existingOrder.id },
+					data: { itemQty: input.item_qty },
+				})
+			: await tx.order.create({
+					data: {
+						batchId: input.batch_id,
+						buyerId,
+						itemQty: input.item_qty,
+					},
+				});
 
 		// 7. 1 invoice per buyer per batch: upsert
 		const existingInvoice = await tx.invoice.findFirst({
@@ -112,54 +109,50 @@ export async function createOrder(buyerId: string, input: CreateOrderInput) {
 			},
 		});
 
-		let invoice;
 		const deadlinePayment = new Date(
 			Date.now() + deadlineHours * 60 * 60 * 1000,
 		);
 
-		if (existingInvoice) {
-			// Reject if already approved
-			if (existingInvoice.payments.length > 0) {
-				throw AppError.conflict(
-					"INVOICE_ALREADY_PAID",
-					"Pembayaran invoice sudah disetujui. Tidak dapat mengubah order.",
-				);
-			}
+		if (existingInvoice && existingInvoice.payments.length > 0) {
+			throw AppError.conflict(
+				"INVOICE_ALREADY_PAID",
+				"Pembayaran invoice sudah disetujui. Tidak dapat mengubah order.",
+			);
+		}
 
-			invoice = await tx.invoice.update({
-				where: { id: existingInvoice.id },
-				data: {
-					itemDetail,
-					...(totalAmount !== null && { totalAmount }),
-					invoiceStatus,
-				},
-			});
-		} else {
-			invoice = await tx.invoice.create({
-				data: {
-					buyerId,
-					batchId: input.batch_id,
-					totalAmount: totalAmount ?? 0,
-					itemDetail,
-					invoiceStatus,
-					deadlinePayment,
-				},
-			});
-
-			// Notify if not awaiting price
-			if (!(isJp && totalAmount === null)) {
-				await tx.notification.create({
+		const invoice = existingInvoice
+			? await tx.invoice.update({
+					where: { id: existingInvoice.id },
+					data: {
+						itemDetail,
+						...(totalAmount !== null && { totalAmount }),
+						invoiceStatus,
+					},
+				})
+			: await tx.invoice.create({
 					data: {
 						buyerId,
-						channel: NotificationChannel.IN_APP,
-						type: NotificationType.INVOICE_NEW,
-						title: "Invoice Baru",
-						body: `Tagihan batch ${batch.title} sebesar Rp ${totalAmount?.toLocaleString("id-ID") ?? "-"} telah dibuat.`,
-						triggeredByEvent: "ORDER_CREATED",
-						referenceId: invoice.id,
+						batchId: input.batch_id,
+						totalAmount: totalAmount ?? 0,
+						itemDetail,
+						invoiceStatus,
+						deadlinePayment,
 					},
 				});
-			}
+
+		// Notify if not awaiting price
+		if (!(isJp && totalAmount === null)) {
+			await tx.notification.create({
+				data: {
+					buyerId,
+					channel: NotificationChannel.IN_APP,
+					type: NotificationType.INVOICE_NEW,
+					title: "Invoice Baru",
+					body: `Tagihan batch ${batch.title} sebesar Rp ${totalAmount?.toLocaleString("id-ID") ?? "-"} telah dibuat.`,
+					triggeredByEvent: "ORDER_CREATED",
+					referenceId: invoice.id,
+				},
+			});
 		}
 
 		return { order, invoice };

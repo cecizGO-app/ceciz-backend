@@ -1,5 +1,4 @@
 import { CountryCode } from "../../../generated/prisma/enums.js";
-import { AppError } from "../../../lib/errors.js";
 import { buildMeta, getPaginationArgs } from "../../../lib/pagination.js";
 import { prisma } from "../../../lib/prisma.js";
 import { calcPenalty } from "../../../services/penalty.service.js";

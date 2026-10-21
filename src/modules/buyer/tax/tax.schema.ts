@@ -3,7 +3,7 @@ import { TaxInvoiceStatus } from "../../../generated/prisma/enums.js";
 import { paginationSchema } from "../../../lib/pagination.js";
 
 export const getTaxInvoicesQuerySchema = paginationSchema.extend({
-	status: z.nativeEnum(TaxInvoiceStatus).optional(),
+	status: z.enum(TaxInvoiceStatus).optional(),
 });
 
 export const uploadTaxPaymentSchema = z

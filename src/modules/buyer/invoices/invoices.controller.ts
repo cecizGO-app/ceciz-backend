@@ -11,7 +11,8 @@ export async function handleGetInvoices(req: Request, res: Response) {
 
 export async function handleGetInvoiceById(req: Request, res: Response) {
 	const buyerId = req.user!.id;
-	const invoice = await getInvoiceById(buyerId, req.params.id);
+	const id = req.params.id as string;
+	const invoice = await getInvoiceById(buyerId, id);
 	if (!invoice) throw AppError.notFound("Invoice tidak ditemukan");
 	return sendSuccess(res, invoice);
 }

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { sendSuccess } from "../../lib/response.js";
 
-export const contentRouter = Router();
+export const contentRouter: Router = Router();
 
 /**
  * GET /api/v1/content/cs-contact

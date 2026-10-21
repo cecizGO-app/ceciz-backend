@@ -1,6 +1,6 @@
 import { CountryCode } from "../../../generated/prisma/enums.js";
-import { prisma } from "../../../lib/prisma.js";
 import { buildMeta, getPaginationArgs } from "../../../lib/pagination.js";
+import { prisma } from "../../../lib/prisma.js";
 import type { GetBuyerBatchesQuery } from "./batches.schema.js";
 
 export async function getBuyerBatches(query: GetBuyerBatchesQuery) {
@@ -98,8 +98,7 @@ export async function getBuyerBatchById(id: string) {
 
 	const isJp = batch.countryCode === CountryCode.JP;
 	const hasJpPrice = batch.items.some((i) => i.hargaJualPerBuyer !== null);
-	const priceStatus =
-		isJp && !hasJpPrice ? "PENDING" : "AVAILABLE";
+	const priceStatus = isJp && !hasJpPrice ? "PENDING" : "AVAILABLE";
 
 	return {
 		id: batch.id,

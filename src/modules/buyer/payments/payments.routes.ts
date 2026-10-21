@@ -7,7 +7,7 @@ import {
 } from "./payments.controller.js";
 import { uploadPaymentProof } from "./upload.middleware.js";
 
-export const paymentsRouter = Router();
+export const paymentsRouter: Router = Router();
 
 paymentsRouter.post(
 	"/api/v1/buyer/invoices/:id/payments",

@@ -1,3 +1,4 @@
+import type { RequestHandler } from "express";
 import multer from "multer";
 import { AppError } from "../../../lib/errors.js";
 
@@ -36,7 +37,7 @@ export function validateImageMime(file: Express.Multer.File): void {
 	}
 }
 
-export const uploadPaymentProof = multer({
+export const uploadPaymentProof: RequestHandler = multer({
 	storage: multer.memoryStorage(),
 	limits: { fileSize: MAX_FILE_SIZE },
 	fileFilter: (_req, file, cb) => {

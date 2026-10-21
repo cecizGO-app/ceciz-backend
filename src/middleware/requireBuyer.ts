@@ -1,4 +1,3 @@
-import type { NextFunction, Request, Response } from "express";
 import { requireRole } from "./requireRole.js";
 
 /**

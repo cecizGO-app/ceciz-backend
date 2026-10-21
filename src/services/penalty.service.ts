@@ -17,7 +17,11 @@ export function toWibDay(date: Date): Date {
 	const wibDate = new Date(wibMs);
 	// Reset to WIB midnight
 	return new Date(
-		Date.UTC(wibDate.getUTCFullYear(), wibDate.getUTCMonth(), wibDate.getUTCDate()),
+		Date.UTC(
+			wibDate.getUTCFullYear(),
+			wibDate.getUTCMonth(),
+			wibDate.getUTCDate(),
+		),
 	);
 }
 
@@ -25,7 +29,10 @@ export function toWibDay(date: Date): Date {
  * Calculate how many calendar days (WIB) past the deadline.
  * Returns 0 if not overdue.
  */
-export function calcOverdueDays(deadline: Date, now: Date = new Date()): number {
+export function calcOverdueDays(
+	deadline: Date,
+	now: Date = new Date(),
+): number {
 	const deadlineDay = toWibDay(deadline);
 	const nowDay = toWibDay(now);
 

@@ -1,4 +1,4 @@
-﻿import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
@@ -28,27 +28,50 @@ export interface UploadOptions {
 	folder?: string;
 }
 
-export async function uploadToR2({
-	fileBuffer,
-	fileName,
-	mimeType,
-	folder = "payments",
-}: UploadOptions): Promise<string> {
+export function uploadToR2(options: UploadOptions): Promise<string>;
+export function uploadToR2(
+	fileBuffer: Buffer,
+	key: string,
+	mimeType: string,
+): Promise<string>;
+export async function uploadToR2(
+	optionsOrBuffer: UploadOptions | Buffer,
+	keyOrFileName?: string,
+	mimeType?: string,
+): Promise<string> {
 	if (!isR2Configured) {
 		throw new Error(
 			"Cloudflare R2 belum dikonfigurasi. Mohon isi R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, dan R2_SECRET_ACCESS_KEY di file .env",
 		);
 	}
 
-	const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_");
-	const key = `${folder}/${Date.now()}-${cleanFileName}`;
+	let key: string;
+	let buffer: Buffer;
+	let contentType: string;
+
+	if (Buffer.isBuffer(optionsOrBuffer)) {
+		buffer = optionsOrBuffer;
+		key = keyOrFileName ?? `uploads/${Date.now()}`;
+		contentType = mimeType ?? "application/octet-stream";
+	} else {
+		const {
+			fileBuffer,
+			fileName,
+			mimeType: type,
+			folder = "payments",
+		} = optionsOrBuffer;
+		buffer = fileBuffer;
+		const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_");
+		key = `${folder}/${Date.now()}-${cleanFileName}`;
+		contentType = type;
+	}
 
 	await s3Client.send(
 		new PutObjectCommand({
 			Bucket: R2_BUCKET_NAME,
 			Key: key,
-			Body: fileBuffer,
-			ContentType: mimeType,
+			Body: buffer,
+			ContentType: contentType,
 		}),
 	);
 

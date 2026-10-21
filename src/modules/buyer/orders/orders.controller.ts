@@ -17,7 +17,8 @@ export async function handleGetOrders(req: Request, res: Response) {
 
 export async function handleGetOrderById(req: Request, res: Response) {
 	const buyerId = req.user!.id;
-	const order = await getOrderById(buyerId, req.params.id);
+	const id = req.params.id as string;
+	const order = await getOrderById(buyerId, id);
 	if (!order) throw AppError.notFound("Order tidak ditemukan");
 	return sendSuccess(res, order);
 }

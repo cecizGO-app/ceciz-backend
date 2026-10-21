@@ -1,10 +1,10 @@
-import type { Decimal } from "../generated/prisma/client.js";
+export type DecimalLike = { toString(): string } | number;
 
 /**
  * Converts a Prisma Decimal or number to integer rupiah.
  * All monetary values are stored and sent as integer rupiah (no float).
  */
-export function toRupiah(value: Decimal | number | null | undefined): number {
+export function toRupiah(value: DecimalLike | null | undefined): number {
 	if (value === null || value === undefined) return 0;
 	return Math.round(Number(value));
 }

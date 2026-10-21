@@ -9,7 +9,7 @@ export async function handleGetBuyerBatches(req: Request, res: Response) {
 }
 
 export async function handleGetBuyerBatchById(req: Request, res: Response) {
-	const { id } = req.params;
+	const id = req.params.id as string;
 	const batch = await getBuyerBatchById(id);
 	if (!batch) throw AppError.notFound("Batch tidak ditemukan");
 	return sendSuccess(res, batch);

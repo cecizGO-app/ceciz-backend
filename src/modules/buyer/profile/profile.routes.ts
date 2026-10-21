@@ -9,7 +9,7 @@ import {
 } from "./profile.controller.js";
 import { updateProfileSchema } from "./profile.schema.js";
 
-export const profileRouter = Router();
+export const profileRouter: Router = Router();
 
 profileRouter.get(
 	"/api/v1/buyer/me",

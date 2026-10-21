@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { PaymentMethod } from "../../../generated/prisma/enums.js";
 
 export const uploadPaymentSchema = z
 	.object({

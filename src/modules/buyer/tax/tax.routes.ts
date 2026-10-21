@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../../../middleware/requireAuth.js";
 import { requireBuyer } from "../../../middleware/requireBuyer.js";
-import { validate } from "../../../middleware/validate.js";
 import { uploadPaymentProof } from "../payments/upload.middleware.js";
 import {
 	handleGetTaxInvoiceById,
@@ -9,27 +8,25 @@ import {
 	handleGetTaxPayments,
 	handleUploadTaxPayment,
 } from "./tax.controller.js";
-import { getTaxInvoicesQuerySchema } from "./tax.schema.js";
 
-export const taxRouter = Router();
+export const taxRouter: Router = Router();
 
 taxRouter.get(
-	"/api/v1/buyer/tax-invoices",
+	"/api/v1/buyer/taxes",
 	requireAuth,
 	requireBuyer,
-	validate("query", getTaxInvoicesQuerySchema),
 	handleGetTaxInvoices,
 );
 
 taxRouter.get(
-	"/api/v1/buyer/tax-invoices/:id",
+	"/api/v1/buyer/taxes/:id",
 	requireAuth,
 	requireBuyer,
 	handleGetTaxInvoiceById,
 );
 
 taxRouter.post(
-	"/api/v1/buyer/tax-invoices/:id/payments",
+	"/api/v1/buyer/taxes/:id/payments",
 	requireAuth,
 	requireBuyer,
 	uploadPaymentProof,
@@ -37,7 +34,7 @@ taxRouter.post(
 );
 
 taxRouter.get(
-	"/api/v1/buyer/tax-invoices/:id/payments",
+	"/api/v1/buyer/taxes/:id/payments",
 	requireAuth,
 	requireBuyer,
 	handleGetTaxPayments,
