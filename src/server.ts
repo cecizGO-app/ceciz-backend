@@ -1,13 +1,15 @@
-﻿import "dotenv/config";
+import "dotenv/config";
 import { apiReference } from "@scalar/express-api-reference";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express, { type Express } from "express";
-import { openApiSpec } from "./docs/openapi.ts";
-import { auth } from "./lib/auth.ts";
-import { router as batchRouter } from "./routes/batch.routes.ts";
-import { router as paymentRouter } from "./routes/payment.routes.ts";
-import { router as trackingRouter } from "./routes/tracking.routes.ts";
+import { openApiSpec } from "./docs/openapi.js";
+import { auth } from "./lib/auth.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { notFound } from "./middleware/notFound.js";
+import { batchesRouter } from "./modules/admin/batches/batches.routes.js";
+import { paymentsRouter } from "./modules/admin/payments/payments.routes.js";
+import { trackingRouter } from "./modules/admin/tracking/tracking.routes.js";
 
 const app: Express = express();
 const port = process.env.PORT || 3005;
@@ -26,29 +28,30 @@ app.use(
 );
 
 app.get("/", (_req, res) => {
-    res.json({ status: "ok" });
+	res.json({ status: "ok" });
 });
 
 // Scalar API Documentation
 if (process.env.ENABLE_DOCS !== "false") {
-    app.get("/openapi.json", (_req, res) => {
-        res.json(openApiSpec);
-    });
-    app.use(
-        "/reference",
-        apiReference({ theme: "purple", spec: { content: openApiSpec } }),
-    );
+	app.get("/openapi.json", (_req, res) => {
+		res.json(openApiSpec);
+	});
+	app.use(
+		"/reference",
+		apiReference({ theme: "purple", spec: { content: openApiSpec } }),
+	);
 }
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 
 app.use(express.json());
 
-app.use(batchRouter);
-
-app.use(paymentRouter);
-
+app.use(batchesRouter);
+app.use(paymentsRouter);
 app.use(trackingRouter);
+
+app.use(notFound);
+app.use(errorHandler);
 
 if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
 	app.listen(port, () => {
