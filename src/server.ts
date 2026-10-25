@@ -1,4 +1,4 @@
-﻿import "dotenv/config";
+import "dotenv/config";
 import { apiReference } from "@scalar/express-api-reference";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
@@ -27,7 +27,12 @@ const allowedOrigins = [
 	process.env.FRONTEND_BUYER_URL,
 ]
 	.filter(Boolean)
-	.flatMap((url) => (url as string).split(",").map((s) => s.trim()));
+	.flatMap((url) =>
+		(url as string)
+			.split(",")
+			.map((s) => s.trim().replace(/\/+$/, ""))
+			.filter(Boolean),
+	);
 
 app.use(
 	cors({

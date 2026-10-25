@@ -2,7 +2,11 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/prisma";
 
+const isProduction =
+	process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
+
 export const auth = betterAuth({
+	baseURL: process.env.BETTER_AUTH_URL,
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
 	}),
@@ -12,7 +16,18 @@ export const auth = betterAuth({
 		process.env.FRONTEND_BUYER_URL,
 	]
 		.filter(Boolean)
-		.flatMap((url) => (url as string).split(",").map((s) => s.trim())),
+		.flatMap((url) =>
+			(url as string)
+				.split(",")
+				.map((s) => s.trim().replace(/\/+$/, ""))
+				.filter(Boolean),
+		),
+	advanced: {
+		defaultCookieAttributes: {
+			sameSite: isProduction ? "none" : "lax",
+			secure: isProduction,
+		},
+	},
 	user: {
 		additionalFields: {
 			role: {
