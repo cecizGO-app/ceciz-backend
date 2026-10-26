@@ -22,10 +22,14 @@ export const auth = betterAuth({
 				.map((s) => s.trim().replace(/\/+$/, ""))
 				.filter(Boolean),
 		),
+	account: {
+		skipStateCookieCheck: true,
+	},
 	advanced: {
 		defaultCookieAttributes: {
 			sameSite: isProduction ? "none" : "lax",
 			secure: isProduction,
+			partitioned: isProduction,
 		},
 	},
 	user: {

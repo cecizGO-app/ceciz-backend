@@ -5,18 +5,46 @@ import { validate } from "@/middleware/validate";
 import {
 	handleCreateBatch,
 	handleDeleteBatch,
+	handleGetAdminUsers,
 	handleGetBatchById,
 	handleGetBatches,
+	handleGetBatchFormOptions,
 	handleGetBatchStats,
+	handleGetNextBatchNumber,
 	handleUpdateBatch,
 } from "./batches.controller.js";
 import {
 	createBatchSchema,
+	getAdminUsersQuerySchema,
 	getBatchQuerySchema,
+	getNextBatchNumberQuerySchema,
 	updateBatchSchema,
 } from "./batches.schema.js";
 
 export const batchesRouter: Router = Router();
+
+batchesRouter.get(
+	"/api/v1/admin/users",
+	requireAuth,
+	requireRole(["OWNER", "STAFF"]),
+	validate("query", getAdminUsersQuerySchema),
+	handleGetAdminUsers,
+);
+
+batchesRouter.get(
+	"/api/v1/admin/batches/form-options",
+	requireAuth,
+	requireRole(["OWNER", "STAFF"]),
+	handleGetBatchFormOptions,
+);
+
+batchesRouter.get(
+	"/api/v1/admin/batches/next-number",
+	requireAuth,
+	requireRole(["OWNER", "STAFF"]),
+	validate("query", getNextBatchNumberQuerySchema),
+	handleGetNextBatchNumber,
+);
 
 batchesRouter.post(
 	"/api/v1/admin/batches",

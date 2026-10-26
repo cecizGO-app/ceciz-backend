@@ -2,7 +2,9 @@ import type { Request, Response } from "express";
 import { sendCreated, sendSuccess } from "@/lib/response";
 import type {
 	CreateBatchInput,
+	GetAdminUsersQueryInput,
 	GetBatchQueryInput,
+	GetNextBatchNumberQueryInput,
 	UpdateBatchInput,
 } from "./batches.schema.js";
 import * as batchesService from "./batches.service.js";
@@ -22,6 +24,23 @@ export async function handleUpdateBatch(req: Request, res: Response) {
 
 export async function handleGetBatchStats(_req: Request, res: Response) {
 	const result = await batchesService.getBatchStats();
+	return sendSuccess(res, result);
+}
+
+export async function handleGetBatchFormOptions(_req: Request, res: Response) {
+	const result = await batchesService.getBatchFormOptions();
+	return sendSuccess(res, result);
+}
+
+export async function handleGetNextBatchNumber(req: Request, res: Response) {
+	const query = req.query as unknown as GetNextBatchNumberQueryInput;
+	const result = await batchesService.getNextBatchNumber(query.countryCode);
+	return sendSuccess(res, result);
+}
+
+export async function handleGetAdminUsers(req: Request, res: Response) {
+	const query = req.query as unknown as GetAdminUsersQueryInput;
+	const result = await batchesService.getAdminUsers(query);
 	return sendSuccess(res, result);
 }
 

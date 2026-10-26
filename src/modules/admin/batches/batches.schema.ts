@@ -1,15 +1,15 @@
 import { z } from "zod";
-import { BatchStatus, CountryCode } from "@/generated/prisma/enums";
+import { BatchStatus, CountryCode, Role } from "@/generated/prisma/enums";
 
 export const batchItemInputSchema = z.object({
 	buyerId: z.string().trim().min(1, "Buyer ID wajib diisi"),
 	buyerName: z.string().trim().optional(),
 	description: z.string().trim().min(1, "Nama/Varian merch wajib diisi"),
-	hargaAsli: z.number().positive("Harga asli harus lebih dari 0"),
-	pcs: z.number().int().positive().default(1),
-	feeNyelem: z.number().nonnegative().optional(),
-	hargaPerBuyer: z.number().nonnegative().optional(),
-	hargaJualPerBuyer: z.number().nonnegative().optional(),
+	hargaAsli: z.coerce.number().positive("Harga asli harus lebih dari 0"),
+	pcs: z.coerce.number().int().positive().default(1),
+	feeNyelem: z.coerce.number().nonnegative().nullable().optional(),
+	hargaPerBuyer: z.coerce.number().nonnegative().nullable().optional(),
+	hargaJualPerBuyer: z.coerce.number().nonnegative().nullable().optional(),
 });
 
 export type BatchItemInput = z.infer<typeof batchItemInputSchema>;
@@ -18,7 +18,7 @@ export const createBatchSchema = z.object({
 	countryCode: z.enum(["CH", "KR", "TH", "JP", "INA"], {
 		message: "Kode Negara harus CH, KR, TH, JP, atau INA",
 	}),
-	batchNumber: z
+	batchNumber: z.coerce
 		.number()
 		.int()
 		.positive("Nomor batch harus angka bulat positif"),
@@ -27,50 +27,74 @@ export const createBatchSchema = z.object({
 		.string()
 		.trim()
 		.min(1, "Judul batch wajib diisi")
-		.max(50, "Judul batch maksimal 50 karakter"),
+		.max(100, "Judul batch maksimal 100 karakter"),
 	description: z
 		.string()
 		.trim()
-		.max(250, "Deskripsi maksimal 250 karakter")
+		.max(500, "Deskripsi maksimal 500 karakter")
+		.nullable()
 		.optional(),
-	shippingFee: z.number().nonnegative().optional(),
-	feeGo: z.number().nonnegative().default(0),
-	feeRekap: z.number().nonnegative().default(0),
-	feeNyelem: z.number().nonnegative().default(0),
-	rateHarian: z
+	whName: z.string().trim().nullable().optional(),
+	shippingFee: z.coerce.number().nonnegative().nullable().optional(),
+	feeGo: z.coerce.number().nonnegative().default(0),
+	feeRekap: z.coerce.number().nonnegative().default(0),
+	feeNyelem: z.coerce.number().nonnegative().default(0),
+	rateHarian: z.coerce
 		.number()
 		.positive("Rate harian harus bernilai positif")
+		.nullable()
 		.optional(),
-	feeWh: z.number().nonnegative().optional(),
-	feeProxy: z.number().nonnegative().optional(),
-	adminNyelemId: z.string().optional(),
-	proxyCoName: z.string().optional(),
+	feeWh: z.coerce.number().nonnegative().nullable().optional(),
+	feeProxy: z.coerce.number().nonnegative().nullable().optional(),
+	adminNyelemId: z.string().trim().nullable().optional(),
+	proxyCoName: z.string().trim().nullable().optional(),
+	status: z.enum(BatchStatus).optional(),
+	hargaTotal: z.coerce.number().nullable().optional(),
+	hargaTfSeller: z.coerce.number().nullable().optional(),
+	selisihHarga: z.coerce.number().nullable().optional(),
+	labaBersih: z.coerce.number().nullable().optional(),
 	items: z.array(batchItemInputSchema).optional(),
 });
 
 export type CreateBatchInput = z.infer<typeof createBatchSchema>;
 
-export const updateBatchSchema = createBatchSchema.partial().extend({
-	status: z.enum(BatchStatus).optional(),
-	hargaTotal: z.number().nullable().optional(),
-	hargaTfSeller: z.number().nullable().optional(),
-	selisihHarga: z.number().nullable().optional(),
-	labaBersih: z.number().nullable().optional(),
-});
+export const updateBatchSchema = createBatchSchema.partial();
 
 export type UpdateBatchInput = z.infer<typeof updateBatchSchema>;
 
+const emptyStringToUndefined = <T extends z.ZodTypeAny>(schema: T) =>
+	z.preprocess((val) => (val === "" ? undefined : val), schema);
+
 export const getBatchQuerySchema = z.object({
-	countryCode: z.enum(CountryCode).optional(),
-	status: z.enum(BatchStatus).optional(),
-	search: z.string().trim().optional(),
-	whName: z.string().trim().optional(),
-	includeArchived: z
-		.union([z.boolean(), z.enum(["true", "false"])])
-		.transform((val) => val === true || val === "true")
-		.optional(),
-	page: z.coerce.number().int().positive().optional(),
-	limit: z.coerce.number().int().positive().optional(),
+	countryCode: emptyStringToUndefined(z.enum(CountryCode).optional()),
+	status: emptyStringToUndefined(z.enum(BatchStatus).optional()),
+	search: emptyStringToUndefined(z.string().trim().optional()),
+	whName: emptyStringToUndefined(z.string().trim().optional()),
+	includeArchived: emptyStringToUndefined(
+		z
+			.union([z.boolean(), z.enum(["true", "false"])])
+			.transform((val) => val === true || val === "true")
+			.optional(),
+	),
+	page: emptyStringToUndefined(z.coerce.number().int().positive().optional()),
+	limit: emptyStringToUndefined(z.coerce.number().int().positive().optional()),
 });
 
 export type GetBatchQueryInput = z.infer<typeof getBatchQuerySchema>;
+
+export const getAdminUsersQuerySchema = z.object({
+	role: emptyStringToUndefined(z.enum(Role).optional()),
+	search: emptyStringToUndefined(z.string().trim().optional()),
+});
+
+export type GetAdminUsersQueryInput = z.infer<typeof getAdminUsersQuerySchema>;
+
+export const getNextBatchNumberQuerySchema = z.object({
+	countryCode: z.enum(CountryCode, {
+		message: "Kode Negara harus CH, KR, TH, JP, atau INA",
+	}),
+});
+
+export type GetNextBatchNumberQueryInput = z.infer<
+	typeof getNextBatchNumberQuerySchema
+>;
