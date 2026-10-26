@@ -18,8 +18,15 @@ export function validate(target: ValidateTarget, schema: ZodType) {
 			}));
 			return sendError(res, 400, "VALIDATION_ERROR", "Validasi gagal", details);
 		}
-		// Overwrite with parsed (and possibly defaulted) value
-		(req as unknown as Record<string, unknown>)[target] = result.data;
+		// Overwrite with parsed (and possibly defaulted) value.
+		// Express 5 defines `req.query` as a getter-only property on prototype,
+		// so direct assignment `req[target] = ...` throws a TypeError.
+		Object.defineProperty(req, target, {
+			value: result.data,
+			writable: true,
+			enumerable: true,
+			configurable: true,
+		});
 		next();
 	};
 }
