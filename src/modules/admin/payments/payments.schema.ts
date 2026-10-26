@@ -78,20 +78,41 @@ export const createPaymentSchema = z
 	.object({
 		invoiceId: z.string().trim().optional(),
 		batchId: z.string().trim().optional(),
-		buyerId: z.string().trim().min(1, "Buyer ID wajib diisi"),
+		batchCode: z.string().trim().optional(),
+		batch: z.string().trim().optional(),
+		buyerId: z.string().trim().optional(),
+		buyerName: z.string().trim().optional(),
+		buyer: z.string().trim().optional(),
 		amount: z.coerce.number().positive("Nominal harus bernilai positif"),
 		paymentMethod: z.enum(PaymentMethod, {
 			message: "Metode pembayaran tidak valid",
 		}),
 		paymentDate: z.coerce.date().default(() => new Date()),
 		paymentProofUrl: z.string().trim().optional().default(""),
-		status: z.enum(["PENDING", "APPROVED"]).default("APPROVED"),
+		status: z.enum(["PENDING", "APPROVED"]).optional(),
+		verificationStatus: z.enum(["PENDING", "APPROVED"]).optional(),
 		notes: z.string().trim().max(500).optional(),
+		keterangan: z.string().trim().max(500).optional(),
 	})
-	.refine((data) => Boolean(data.invoiceId) || Boolean(data.batchId), {
-		message: "invoiceId atau batchId wajib diisi",
-		path: ["batchId"],
-	});
+	.refine(
+		(data) =>
+			Boolean(data.buyerId) || Boolean(data.buyerName) || Boolean(data.buyer),
+		{
+			message: "Buyer (buyerId atau buyerName) wajib diisi",
+			path: ["buyerId"],
+		},
+	)
+	.refine(
+		(data) =>
+			Boolean(data.invoiceId) ||
+			Boolean(data.batchId) ||
+			Boolean(data.batchCode) ||
+			Boolean(data.batch),
+		{
+			message: "Batch atau Invoice wajib diisi",
+			path: ["batchId"],
+		},
+	);
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 

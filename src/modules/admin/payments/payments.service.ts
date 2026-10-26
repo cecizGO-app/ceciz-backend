@@ -35,7 +35,7 @@ export async function getPaymentStats() {
 		"November",
 		"Desember",
 	];
-	const currentMonthLabel = `Bulan ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+	const currentMonthLabel = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
 	const [
 		totalPending,
@@ -621,35 +621,122 @@ export async function createPayment(
 	input: CreatePaymentInput,
 	adminUserId?: string,
 ) {
-	// Cari invoice: langsung via invoiceId, atau via buyerId + batchId
-	const invoice = input.invoiceId
-		? await prisma.invoice.findUnique({ where: { id: input.invoiceId } })
-		: await prisma.invoice.findFirst({
-				where: { buyerId: input.buyerId, batchId: input.batchId as string },
-			});
-
-	if (!invoice) {
-		throw AppError.notFound(
-			"Invoice untuk buyer dan batch tersebut tidak ditemukan",
-		);
-	}
-
-	if (invoice.buyerId !== input.buyerId) {
-		throw AppError.badRequest("Buyer ID tidak sesuai dengan pemilik invoice");
-	}
-
-	const isApproved = input.status === "APPROVED";
+	const resolvedStatus =
+		input.status ?? input.verificationStatus ?? VerificationStatus.APPROVED;
+	const isApproved = resolvedStatus === "APPROVED";
+	const resolvedNotes = input.notes ?? input.keterangan ?? null;
 
 	const newPayment = await prisma.$transaction(async (tx) => {
+		// 1. Resolve Buyer (via ID atau Nama)
+		const buyerIdentifier = (
+			input.buyerId ||
+			input.buyerName ||
+			input.buyer ||
+			""
+		).trim();
+
+		let buyer = await tx.user.findFirst({
+			where: {
+				OR: [
+					{ id: buyerIdentifier },
+					{ name: { equals: buyerIdentifier, mode: "insensitive" } },
+					{ contact: { equals: buyerIdentifier, mode: "insensitive" } },
+					{ idLine: { equals: buyerIdentifier, mode: "insensitive" } },
+				],
+			},
+		});
+
+		if (!buyer) {
+			const safeSlug = buyerIdentifier
+				.toLowerCase()
+				.replace(/[^a-z0-9._-]/g, "_")
+				.slice(0, 40);
+			buyer = await tx.user.create({
+				data: {
+					id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+					name: buyerIdentifier,
+					email: `${safeSlug || "buyer"}_${Date.now()}@buyer.ceciz.local`,
+					role: "BUYER",
+					isOnboarded: true,
+					isActive: true,
+				},
+			});
+		}
+
+		// 2. Resolve Invoice atau Batch (mendukung ID CUID maupun kode seperti "CH-025")
+		let invoice = input.invoiceId
+			? await tx.invoice.findUnique({ where: { id: input.invoiceId } })
+			: null;
+
+		if (!invoice) {
+			const batchRef = (
+				input.batchId ||
+				input.batchCode ||
+				input.batch ||
+				""
+			).trim();
+
+			let batch = await tx.batch.findUnique({ where: { id: batchRef } });
+
+			if (!batch) {
+				const match = batchRef.match(/^([a-zA-Z]{2,3})[- ]?(\d+)$/);
+				if (match?.[1] && match[2]) {
+					const country = match[1].toUpperCase() as CountryCode;
+					const num = parseInt(match[2], 10);
+					if (Object.values(CountryCode).includes(country)) {
+						batch = await tx.batch.findUnique({
+							where: {
+								countryCode_batchNumber: {
+									countryCode: country,
+									batchNumber: num,
+								},
+							},
+						});
+					}
+				}
+			}
+
+			if (!batch) {
+				throw AppError.notFound(
+					`Batch "${batchRef}" tidak ditemukan. Pastikan kode batch (contoh: CH-001) sudah terdaftar.`,
+				);
+			}
+
+			invoice = await tx.invoice.findFirst({
+				where: { buyerId: buyer.id, batchId: batch.id },
+			});
+
+			if (!invoice) {
+				invoice = await tx.invoice.create({
+					data: {
+						buyerId: buyer.id,
+						batchId: batch.id,
+						totalAmount: input.amount,
+						itemDetail: [
+							{
+								item_name: resolvedNotes || `Pembayaran Manual ${batch.title}`,
+								qty: 1,
+								harga_per_buyer: input.amount,
+							},
+						],
+						invoiceStatus: isApproved
+							? InvoiceStatus.PAID
+							: InvoiceStatus.AWAITING_VERIFICATION,
+						deadlinePayment: new Date(Date.now() + 24 * 60 * 60 * 1000),
+					},
+				});
+			}
+		}
+
 		const payment = await tx.payment.create({
 			data: {
 				invoiceId: invoice.id,
-				buyerId: input.buyerId,
+				buyerId: buyer.id,
 				amount: input.amount,
 				paymentMethod: input.paymentMethod,
 				paymentDate: input.paymentDate,
 				paymentProofUrl: input.paymentProofUrl ?? "",
-				notes: input.notes ?? null,
+				notes: resolvedNotes,
 				verificationStatus: isApproved
 					? VerificationStatus.APPROVED
 					: VerificationStatus.PENDING,
@@ -681,7 +768,7 @@ export async function createPayment(
 
 			await tx.notification.create({
 				data: {
-					buyerId: input.buyerId,
+					buyerId: buyer.id,
 					channel: NotificationChannel.IN_APP,
 					type: NotificationType.PAYMENT_APPROVED,
 					title: "Pembayaran Disetujui",

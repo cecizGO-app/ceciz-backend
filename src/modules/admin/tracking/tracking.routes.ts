@@ -5,6 +5,7 @@ import { validate } from "@/middleware/validate";
 import {
 	handleGetAllTracking,
 	handleGetTrackingByBatchId,
+	handleGetTrackingStats,
 	handleUpdateTracking,
 } from "./tracking.controller.js";
 import {
@@ -13,6 +14,13 @@ import {
 } from "./tracking.schema.js";
 
 export const trackingRouter: Router = Router();
+
+trackingRouter.get(
+	"/api/v1/admin/tracking/stats",
+	requireAuth,
+	requireRole(["OWNER", "STAFF"]),
+	handleGetTrackingStats,
+);
 
 trackingRouter.get(
 	"/api/v1/admin/tracking",
