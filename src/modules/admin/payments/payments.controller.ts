@@ -4,6 +4,7 @@ import type {
 	BulkVerifyPaymentInput,
 	CreatePaymentInput,
 	GetPaymentQueryInput,
+	InvoiceLookupQueryInput,
 	VerifyPaymentInput,
 } from "./payments.schema.js";
 import * as paymentsService from "./payments.service.js";
@@ -46,5 +47,22 @@ export async function handleCreatePayment(req: Request, res: Response) {
 
 export async function handleUploadPaymentProof(req: Request, res: Response) {
 	const result = await paymentsService.uploadPaymentProof(req.file);
+	return sendSuccess(res, result);
+}
+
+export async function handleLookupInvoice(req: Request, res: Response) {
+	const query = req.query as unknown as InvoiceLookupQueryInput;
+	const result = await paymentsService.lookupInvoice(
+		query.buyerId,
+		query.batchId,
+	);
+	return sendSuccess(res, result);
+}
+
+export async function handleGetPaymentBatchOptions(
+	_req: Request,
+	res: Response,
+) {
+	const result = await paymentsService.getPaymentBatchOptions();
 	return sendSuccess(res, result);
 }

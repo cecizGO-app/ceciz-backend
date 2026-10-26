@@ -301,6 +301,7 @@ model Payment {
   verifiedBy         User?              @relation("VerifiedPayments", fields: [verifiedById], references: [id])
   verifiedAt         DateTime?
   rejectReason       String?
+  notes              String?
 
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt

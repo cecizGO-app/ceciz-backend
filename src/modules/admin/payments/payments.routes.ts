@@ -6,9 +6,11 @@ import { validate } from "@/middleware/validate";
 import {
 	handleBulkVerifyPayments,
 	handleCreatePayment,
+	handleGetPaymentBatchOptions,
 	handleGetPaymentById,
 	handleGetPaymentStats,
 	handleGetPayments,
+	handleLookupInvoice,
 	handleUploadPaymentProof,
 	handleVerifyPayment,
 } from "./payments.controller.js";
@@ -16,10 +18,28 @@ import {
 	bulkVerifyPaymentSchema,
 	createPaymentSchema,
 	getPaymentQuerySchema,
+	invoiceLookupQuerySchema,
 	verifyPaymentSchema,
 } from "./payments.schema.js";
 
 export const paymentsRouter: Router = Router();
+
+// Dropdown "Semua Batch" / pilihan batch di modal tambah pembayaran
+paymentsRouter.get(
+	"/api/v1/admin/payments/batch-options",
+	requireAuth,
+	requireRole(["OWNER", "STAFF"]),
+	handleGetPaymentBatchOptions,
+);
+
+// Cari invoice berdasarkan buyer + batch (modal tambah pembayaran manual)
+paymentsRouter.get(
+	"/api/v1/admin/payments/invoice-lookup",
+	requireAuth,
+	requireRole(["OWNER", "STAFF"]),
+	validate("query", invoiceLookupQuerySchema),
+	handleLookupInvoice,
+);
 
 // Upload file image to Cloudflare R2
 paymentsRouter.post(

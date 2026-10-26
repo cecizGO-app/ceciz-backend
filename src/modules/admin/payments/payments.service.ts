@@ -245,6 +245,7 @@ export async function getPayments(query: GetPaymentQueryInput) {
 					select: {
 						id: true,
 						totalAmount: true,
+						penaltyAmount: true,
 						invoiceStatus: true,
 						itemDetail: true,
 						batchId: true,
@@ -278,7 +279,9 @@ export async function getPayments(query: GetPaymentQueryInput) {
 			: "-";
 
 		let keterangan = "-";
-		if (Array.isArray(p.invoice?.itemDetail)) {
+		if (p.notes?.trim()) {
+			keterangan = p.notes.trim();
+		} else if (Array.isArray(p.invoice?.itemDetail)) {
 			keterangan = (
 				p.invoice.itemDetail as Array<{
 					item_name?: string;
@@ -315,6 +318,8 @@ export async function getPayments(query: GetPaymentQueryInput) {
 				batchNumber: p.invoice?.batch?.batchNumber,
 			},
 			amount: Number(p.amount),
+			penaltyAmount: Number(p.invoice?.penaltyAmount ?? 0),
+			notes: p.notes,
 			paymentMethod: p.paymentMethod,
 			sumber: p.verifiedById && !p.paymentProofUrl ? "Admin" : "Buyer",
 			keterangan,
@@ -616,31 +621,40 @@ export async function createPayment(
 	input: CreatePaymentInput,
 	adminUserId?: string,
 ) {
-	// Verifikasi invoice ada
-	const invoice = await prisma.invoice.findUnique({
-		where: { id: input.invoiceId },
-	});
+	// Cari invoice: langsung via invoiceId, atau via buyerId + batchId
+	const invoice = input.invoiceId
+		? await prisma.invoice.findUnique({ where: { id: input.invoiceId } })
+		: await prisma.invoice.findFirst({
+				where: { buyerId: input.buyerId, batchId: input.batchId as string },
+			});
 
 	if (!invoice) {
-		throw AppError.notFound("Invoice dengan ID tersebut tidak ditemukan");
+		throw AppError.notFound(
+			"Invoice untuk buyer dan batch tersebut tidak ditemukan",
+		);
 	}
 
 	if (invoice.buyerId !== input.buyerId) {
 		throw AppError.badRequest("Buyer ID tidak sesuai dengan pemilik invoice");
 	}
 
+	const isApproved = input.status === "APPROVED";
+
 	const newPayment = await prisma.$transaction(async (tx) => {
 		const payment = await tx.payment.create({
 			data: {
-				invoiceId: input.invoiceId,
+				invoiceId: invoice.id,
 				buyerId: input.buyerId,
 				amount: input.amount,
 				paymentMethod: input.paymentMethod,
 				paymentDate: input.paymentDate,
 				paymentProofUrl: input.paymentProofUrl ?? "",
-				verificationStatus: VerificationStatus.APPROVED,
-				verifiedById: adminUserId ?? null,
-				verifiedAt: new Date(),
+				notes: input.notes ?? null,
+				verificationStatus: isApproved
+					? VerificationStatus.APPROVED
+					: VerificationStatus.PENDING,
+				verifiedById: isApproved ? (adminUserId ?? null) : null,
+				verifiedAt: isApproved ? new Date() : null,
 			},
 			include: {
 				buyer: { select: { id: true, name: true, email: true } },
@@ -648,20 +662,38 @@ export async function createPayment(
 			},
 		});
 
-		// Cek apakah invoice lunas
-		const approvedSum = await tx.payment.aggregate({
-			_sum: { amount: true },
-			where: {
-				invoiceId: input.invoiceId,
-				verificationStatus: VerificationStatus.APPROVED,
-			},
-		});
+		if (isApproved) {
+			const approvedSum = await tx.payment.aggregate({
+				_sum: { amount: true },
+				where: {
+					invoiceId: invoice.id,
+					verificationStatus: VerificationStatus.APPROVED,
+				},
+			});
 
-		const totalPaid = Number(approvedSum._sum.amount ?? 0);
-		if (totalPaid >= Number(invoice.totalAmount)) {
+			const totalPaid = Number(approvedSum._sum.amount ?? 0);
+			if (totalPaid >= Number(invoice.totalAmount)) {
+				await tx.invoice.update({
+					where: { id: invoice.id },
+					data: { invoiceStatus: InvoiceStatus.PAID },
+				});
+			}
+
+			await tx.notification.create({
+				data: {
+					buyerId: input.buyerId,
+					channel: NotificationChannel.IN_APP,
+					type: NotificationType.PAYMENT_APPROVED,
+					title: "Pembayaran Disetujui",
+					body: `Pembayaran sebesar Rp ${input.amount.toLocaleString("id-ID")} telah dicatat dan disetujui.`,
+					triggeredByEvent: "PAYMENT_MANUAL_CREATED",
+					referenceId: payment.id,
+				},
+			});
+		} else if (invoice.invoiceStatus !== InvoiceStatus.PAID) {
 			await tx.invoice.update({
-				where: { id: input.invoiceId },
-				data: { invoiceStatus: InvoiceStatus.PAID },
+				where: { id: invoice.id },
+				data: { invoiceStatus: InvoiceStatus.AWAITING_VERIFICATION },
 			});
 		}
 
@@ -669,6 +701,76 @@ export async function createPayment(
 	});
 
 	return newPayment;
+}
+
+export async function lookupInvoice(buyerId: string, batchId: string) {
+	const invoice = await prisma.invoice.findFirst({
+		where: { buyerId, batchId },
+		include: {
+			batch: {
+				select: {
+					id: true,
+					countryCode: true,
+					batchNumber: true,
+					title: true,
+				},
+			},
+			payments: {
+				where: { verificationStatus: VerificationStatus.APPROVED },
+				select: { amount: true },
+			},
+		},
+	});
+
+	if (!invoice) {
+		throw AppError.notFound(
+			"Buyer belum memiliki invoice di batch ini. Tambahkan pesanan buyer ke batch terlebih dahulu.",
+		);
+	}
+
+	const totalPaid = invoice.payments.reduce(
+		(sum, p) => sum + Number(p.amount),
+		0,
+	);
+	const totalAmount = Number(invoice.totalAmount);
+	const penaltyAmount = Number(invoice.penaltyAmount);
+
+	return {
+		invoiceId: invoice.id,
+		buyerId: invoice.buyerId,
+		batch: {
+			id: invoice.batch.id,
+			code: `${invoice.batch.countryCode}-${String(invoice.batch.batchNumber).padStart(3, "0")}`,
+			title: invoice.batch.title,
+		},
+		invoiceStatus: invoice.invoiceStatus,
+		totalAmount,
+		penaltyAmount,
+		totalPaid,
+		remainingAmount: Math.max(totalAmount + penaltyAmount - totalPaid, 0),
+		deadlinePayment: invoice.deadlinePayment,
+	};
+}
+
+export async function getPaymentBatchOptions() {
+	const batches = await prisma.batch.findMany({
+		where: { invoices: { some: {} } },
+		orderBy: { createdAt: "desc" },
+		select: {
+			id: true,
+			countryCode: true,
+			batchNumber: true,
+			title: true,
+		},
+	});
+
+	return batches.map((b) => ({
+		id: b.id,
+		code: `${b.countryCode}-${String(b.batchNumber).padStart(3, "0")}`,
+		title: b.title,
+		countryCode: b.countryCode,
+		batchNumber: b.batchNumber,
+	}));
 }
 
 export async function uploadPaymentProof(file?: Express.Multer.File) {
