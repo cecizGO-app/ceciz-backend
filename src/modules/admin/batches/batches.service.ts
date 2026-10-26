@@ -21,18 +21,38 @@ import type {
 
 const DEFAULT_DAILY_RATE: Record<string, number> = {
 	CH: 2250,
-	KR: 12,
+	KR: 11.8,
 	TH: 450,
-	JP: 110,
+	JP: 108,
 	INA: 1,
 };
 
 const DEFAULT_FEE_REKAP_TIERS = [
-	{ min_pcs: 1, max_pcs: 1, fee: 2000 },
-	{ min_pcs: 2, max_pcs: 5, fee: 4000 },
-	{ min_pcs: 6, max_pcs: 10, fee: 7000 },
-	{ min_pcs: 11, max_pcs: 999, fee: 10000 },
+	{ min_pcs: 1, max_pcs: 1, fee: 2000, label: "Tier 1 pc" },
+	{ min_pcs: 2, max_pcs: 5, fee: 4000, label: "Tier 2-5 pcs" },
+	{ min_pcs: 6, max_pcs: 10, fee: 6000, label: "Tier 6-10 pcs" },
+	{ min_pcs: 11, max_pcs: 15, fee: 8000, label: "Tier 11-15 pcs" },
+	{ min_pcs: 16, max_pcs: 20, fee: 11000, label: "Tier 16-20 pcs" },
+	{ min_pcs: 21, max_pcs: 25, fee: 14000, label: "Tier 21-25 pcs" },
+	{ min_pcs: 26, max_pcs: 30, fee: 17000, label: "Tier 26-30 pcs" },
+	{ min_pcs: 31, max_pcs: 35, fee: 21000, label: "Tier 31-35 pcs" },
+	{ min_pcs: 36, max_pcs: 40, fee: 25000, label: "Tier 36-40 pcs" },
+	{ min_pcs: 41, max_pcs: 45, fee: 29000, label: "Tier 41-45 pcs" },
+	{ min_pcs: 46, max_pcs: 50, fee: 33000, label: "Tier 46-50 pcs" },
+	{ min_pcs: 51, max_pcs: 55, fee: 37000, label: "Tier 51-55 pcs" },
+	{ min_pcs: 56, max_pcs: 60, fee: 41000, label: "Tier 56-60 pcs" },
 ];
+
+export function calculateTieredFeeRekap(totalPcs: number): number {
+	if (totalPcs <= 0) return 0;
+	const matched = DEFAULT_FEE_REKAP_TIERS.find(
+		(tier) => totalPcs >= tier.min_pcs && totalPcs <= tier.max_pcs,
+	);
+	if (matched) return matched.fee;
+	// Untuk > 60 pcs, gunakan kelipatan +Rp4.000 tiap 5 pcs di atas 60
+	const extraBlocks = Math.ceil((totalPcs - 60) / 5);
+	return 41000 + extraBlocks * 4000;
+}
 
 function computeBatchCalculations(params: {
 	countryCode: CountryCode;
@@ -57,57 +77,140 @@ function computeBatchCalculations(params: {
 		items,
 	} = params;
 
+	const totalPcs = items.reduce((sum, item) => sum + (item.pcs || 1), 0);
+	const resolvedFeeRekap =
+		feeRekap > 0 ? feeRekap : calculateTieredFeeRekap(totalPcs);
+
 	const rate =
 		countryCode === CountryCode.INA
 			? 1
 			: (rateHarian ?? DEFAULT_DAILY_RATE[countryCode] ?? 1);
 
-	const totalPcs = items.reduce((sum, item) => sum + (item.pcs || 1), 0);
+	// Khusus Korea (KR): format input harga dibagi 10.000 (misal 0.2 = 2.000 Won)
+	const krMultiplier = countryCode === CountryCode.KR ? 10000 : 1;
+
 	const totalHargaAsli = items.reduce(
 		(sum, item) => sum + item.hargaAsli * (item.pcs || 1),
 		0,
 	);
 
-	const baseIdr = totalHargaAsli * rate;
-	const shippingIdr =
-		countryCode === CountryCode.INA ? 0 : (shippingFee ?? 0) * rate;
+	// 1. Konversi Barang & Ongkir ke IDR
+	const baseIdr = totalHargaAsli * krMultiplier * rate;
 	const whAndProxyIdr = (feeWh ?? 0) + (feeProxy ?? 0);
 
-	// Total Modal Batch (Nett) / Transfer Seller
+	// Untuk INA, shippingFee / feeWh / feeProxy merepresentasikan "Harga CO Shopee dari Seller"
+	const shippingIdr =
+		countryCode === CountryCode.INA
+			? (shippingFee ?? 0)
+			: (shippingFee ?? 0) * krMultiplier * rate;
+
+	// 2. Subtotal TF Seller (Modal Riil Keluar)
 	const computedHargaTfSeller = baseIdr + shippingIdr + whAndProxyIdr;
 
-	// Shared operational cost per pcs
-	const totalSharedFeesIdr =
-		shippingIdr + whAndProxyIdr + feeGo + feeRekap + feeNyelem;
-	const sharedFeePerPcs = totalPcs > 0 ? totalSharedFeesIdr / totalPcs : 0;
+	// 3. Perhitungan Harga Bersih per Buyer & Ringkasan Finansial per Negara
+	if (countryCode === CountryCode.JP) {
+		// Kasus 4: Jepang (JP) -> Harga jual manual oleh admin, Fee Nyelem flat total 1 batch
+		const computedItems = items.map((item) => {
+			const pcs = item.pcs || 1;
+			const manualPrice = item.hargaJualPerBuyer ?? item.hargaPerBuyer ?? null;
+			return {
+				...item,
+				pcs,
+				feeNyelem: item.feeNyelem ?? null,
+				hargaPerBuyer: item.hargaPerBuyer ?? manualPrice,
+				hargaJualPerBuyer: manualPrice,
+			};
+		});
+
+		const computedHargaTotal = computedItems.reduce(
+			(sum, item) =>
+				sum + (item.hargaJualPerBuyer ?? item.hargaPerBuyer ?? 0) * item.pcs,
+			0,
+		);
+		const computedSelisihHarga = computedHargaTotal - computedHargaTfSeller;
+		const computedLabaBersih =
+			computedSelisihHarga - feeNyelem - resolvedFeeRekap;
+
+		return {
+			resolvedFeeRekap,
+			computedItems,
+			computedHargaTotal: items.length > 0 ? computedHargaTotal : null,
+			computedHargaTfSeller: items.length > 0 ? computedHargaTfSeller : null,
+			computedSelisihHarga: items.length > 0 ? computedSelisihHarga : null,
+			computedLabaBersih: items.length > 0 ? computedLabaBersih : null,
+		};
+	}
+
+	if (countryCode === CountryCode.INA) {
+		// Kasus 5: Indonesia (INA) -> Tagihan Buyer = Harga Asli + Fee GO per pc
+		const resolvedFeeGoTotal = feeGo > 0 ? feeGo : 2000 * totalPcs;
+		const feeGoPerPc = totalPcs > 0 ? resolvedFeeGoTotal / totalPcs : 2000;
+
+		const computedItems = items.map((item) => {
+			const pcs = item.pcs || 1;
+			const defaultUnitBuyerIdr = Math.round(item.hargaAsli + feeGoPerPc);
+			return {
+				...item,
+				pcs,
+				feeNyelem: item.feeNyelem ?? null,
+				hargaPerBuyer: item.hargaPerBuyer ?? defaultUnitBuyerIdr,
+				hargaJualPerBuyer: item.hargaJualPerBuyer ?? null,
+			};
+		});
+
+		const computedHargaTotal = computedItems.reduce(
+			(sum, item) => sum + (item.hargaPerBuyer ?? 0) * item.pcs,
+			0,
+		);
+		const computedSelisihHarga = computedHargaTotal - computedHargaTfSeller;
+		const computedLabaBersih =
+			computedSelisihHarga - feeNyelem - resolvedFeeRekap;
+
+		return {
+			resolvedFeeRekap,
+			computedItems,
+			computedHargaTotal: items.length > 0 ? computedHargaTotal : null,
+			computedHargaTfSeller: items.length > 0 ? computedHargaTfSeller : null,
+			computedSelisihHarga: items.length > 0 ? computedSelisihHarga : null,
+			computedLabaBersih: items.length > 0 ? computedLabaBersih : null,
+		};
+	}
+
+	// Kasus 1, 2, 3: China (CH), Korea (KR), Thailand (TH)
+	// Fee Keseluruhan Batch = Fee WH + Fee Proxy + Fee GO + Fee Rekap
+	// Overhead per Pc = (Ongkir IDR + Fee Keseluruhan) / Total Qty + Fee Nyelem per pc
+	const feeKeseluruhanBatch = whAndProxyIdr + feeGo + resolvedFeeRekap;
+	const sharedOverheadPerPc =
+		totalPcs > 0 ? (shippingIdr + feeKeseluruhanBatch) / totalPcs : 0;
+	const feeNyelemTotal = feeNyelem * totalPcs;
 
 	const computedItems = items.map((item) => {
 		const pcs = item.pcs || 1;
-		const itemFeeNyelem = item.feeNyelem ?? null;
+		const itemFeeNyelemPerPc = item.feeNyelem ?? feeNyelem;
 		const defaultUnitBuyerIdr = Math.round(
-			item.hargaAsli * rate + sharedFeePerPcs + (itemFeeNyelem ?? 0) / pcs,
+			item.hargaAsli * krMultiplier * rate +
+				sharedOverheadPerPc +
+				itemFeeNyelemPerPc,
 		);
 		return {
 			...item,
 			pcs,
-			feeNyelem: itemFeeNyelem,
+			feeNyelem: item.feeNyelem ?? null,
 			hargaPerBuyer: item.hargaPerBuyer ?? defaultUnitBuyerIdr,
 			hargaJualPerBuyer: item.hargaJualPerBuyer ?? null,
 		};
 	});
 
-	const computedHargaTotal = computedItems.reduce((sum, item) => {
-		const unitPrice =
-			countryCode === CountryCode.JP && item.hargaJualPerBuyer !== null
-				? item.hargaJualPerBuyer
-				: (item.hargaPerBuyer ?? 0);
-		return sum + unitPrice * item.pcs;
-	}, 0);
-
+	const computedHargaTotal = computedItems.reduce(
+		(sum, item) => sum + (item.hargaPerBuyer ?? 0) * item.pcs,
+		0,
+	);
 	const computedSelisihHarga = computedHargaTotal - computedHargaTfSeller;
-	const computedLabaBersih = feeGo - feeNyelem;
+	const computedLabaBersih =
+		computedSelisihHarga - resolvedFeeRekap - feeNyelemTotal;
 
 	return {
+		resolvedFeeRekap,
 		computedItems,
 		computedHargaTotal: items.length > 0 ? computedHargaTotal : null,
 		computedHargaTfSeller: items.length > 0 ? computedHargaTfSeller : null,
@@ -300,6 +403,7 @@ export async function createBatch(input: CreateBatchInput) {
 	}
 
 	const {
+		resolvedFeeRekap,
 		computedItems,
 		computedHargaTotal,
 		computedHargaTfSeller,
@@ -336,7 +440,7 @@ export async function createBatch(input: CreateBatchInput) {
 				description: input.description ?? null,
 				shippingFee: input.shippingFee ?? null,
 				feeGo: input.feeGo,
-				feeRekap: input.feeRekap,
+				feeRekap: resolvedFeeRekap,
 				feeNyelem: input.feeNyelem,
 				rateHarian: input.rateHarian ?? null,
 				feeWh: input.feeWh ?? null,
