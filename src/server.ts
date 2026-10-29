@@ -1,4 +1,4 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import { apiReference } from "@scalar/express-api-reference";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
@@ -16,6 +16,10 @@ import { ordersRouter as buyerOrdersRouter } from "@/modules/buyer/orders/orders
 import { paymentsRouter as buyerPaymentsRouter } from "@/modules/buyer/payments/payments.routes";
 import { profileRouter as buyerProfileRouter } from "@/modules/buyer/profile/profile.routes";
 import { taxRouter as buyerTaxRouter } from "@/modules/buyer/tax/tax.routes";
+import { trackingRouter as buyerTrackingRouter } from "@/modules/buyer/tracking/tracking.routes";
+import { notificationsRouter as buyerNotificationsRouter } from "@/modules/buyer/notifications/notifications.routes";
+import { pushRouter as buyerPushRouter } from "@/modules/buyer/push/push.routes";
+import { historyRouter as buyerHistoryRouter } from "@/modules/buyer/history/history.routes";
 import { contentRouter } from "@/modules/content/content.routes";
 
 const app: Express = express();
@@ -72,6 +76,10 @@ app.use(buyerOrdersRouter);
 app.use(buyerPaymentsRouter);
 app.use(buyerProfileRouter);
 app.use(buyerTaxRouter);
+app.use(buyerTrackingRouter);
+app.use(buyerNotificationsRouter);
+app.use(buyerPushRouter);
+app.use(buyerHistoryRouter);
 
 // Content & Public Routes
 app.use(contentRouter);
