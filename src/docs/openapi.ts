@@ -60,6 +60,22 @@ export const openApiSpec = {
 				"Tagihan pajak (tax invoice) dan konfirmasi pembayaran pajak",
 		},
 		{
+			name: "Buyer - Tracking",
+			description: "Status pelacakan logistik batch pesanan buyer",
+		},
+		{
+			name: "Buyer - Notifications",
+			description: "Daftar notifikasi, status dibaca, dan hitungan unread",
+		},
+		{
+			name: "Buyer - Push Notifications",
+			description: "Pengelolaan langganan Web Push notification (VAPID)",
+		},
+		{
+			name: "Buyer - History",
+			description: "Riwayat batch yang telah lunas dan pembayaran yang disetujui",
+		},
+		{
 			name: "Buyer - Profile",
 			description: "Profil data diri dan status onboarding buyer",
 		},
@@ -481,6 +497,45 @@ export const openApiSpec = {
 						type: "string",
 						description: "Alamat lengkap pengiriman",
 						example: "Jl. Sudirman No. 45, Jakarta Selatan",
+					},
+				},
+			},
+			SubscribePushRequest: {
+				type: "object",
+				required: ["endpoint", "p256dh", "auth"],
+				properties: {
+					endpoint: {
+						type: "string",
+						format: "uri",
+						description: "Web Push subscription endpoint URL",
+						example: "https://fcm.googleapis.com/fcm/send/abc123",
+					},
+					p256dh: {
+						type: "string",
+						description: "Kunci publik enkripsi P-256 client",
+						example: "BNcR...",
+					},
+					auth: {
+						type: "string",
+						description: "Authentication secret client",
+						example: "tBHZ...",
+					},
+					user_agent: {
+						type: "string",
+						description: "Informasi user agent / browser",
+						example: "Mozilla/5.0...",
+					},
+				},
+			},
+			UnsubscribePushRequest: {
+				type: "object",
+				required: ["endpoint"],
+				properties: {
+					endpoint: {
+						type: "string",
+						format: "uri",
+						description: "Web Push subscription endpoint yang ingin dihapus",
+						example: "https://fcm.googleapis.com/fcm/send/abc123",
 					},
 				},
 			},
@@ -1598,6 +1653,298 @@ export const openApiSpec = {
 				security: [{ cookieAuth: [] }],
 				responses: {
 					"200": { description: "Status onboarding berhasil disimpan" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/tracking": {
+			get: {
+				tags: ["Buyer - Tracking"],
+				summary: "Daftar Tracking Pengiriman Milik Buyer",
+				description:
+					"Mendapatkan daftar status pelacakan pengiriman logistik untuk batch yang dipesan oleh buyer (berdasarkan relasi invoice).",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+						description: "Halaman data",
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+						description: "Jumlah data per halaman",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar tracking buyer" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/tracking/{id}": {
+			get: {
+				tags: ["Buyer - Tracking"],
+				summary: "Detail Tracking Pengiriman",
+				description:
+					"Mengambil detail status pelacakan logistik batch spesifik milik buyer berdasarkan tracking ID.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID tracking",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil detail tracking" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Tracking tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/buyer/notifications": {
+			get: {
+				tags: ["Buyer - Notifications"],
+				summary: "Daftar Notifikasi Buyer",
+				description:
+					"Mendapatkan riwayat notifikasi in-app untuk buyer yang sedang login. Mendukung filter status dibaca (is_read) dan paginasi.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+					},
+					{
+						name: "is_read",
+						in: "query",
+						required: false,
+						schema: { type: "string", enum: ["true", "false"] },
+						description: "Filter berdasarkan status sudah dibaca atau belum",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar notifikasi" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/notifications/unread-count": {
+			get: {
+				tags: ["Buyer - Notifications"],
+				summary: "Hitung Jumlah Notifikasi Belum Dibaca",
+				description:
+					"Mendapatkan jumlah (count) notifikasi yang belum dibaca (unread_count) oleh buyer.",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": {
+						description: "Berhasil mengambil jumlah notifikasi belum dibaca",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean", example: true },
+										data: {
+											type: "object",
+											properties: {
+												unread_count: { type: "integer", example: 3 },
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/notifications/{id}/read": {
+			patch: {
+				tags: ["Buyer - Notifications"],
+				summary: "Tandai Notifikasi Tertentu Sudah Dibaca",
+				description:
+					"Mengubah status isRead notifikasi menjadi true berdasarkan ID notifikasi.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID notifikasi",
+					},
+				],
+				responses: {
+					"200": { description: "Notifikasi berhasil ditandai sudah dibaca" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Notifikasi tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/buyer/notifications/read-all": {
+			patch: {
+				tags: ["Buyer - Notifications"],
+				summary: "Tandai Semua Notifikasi Sudah Dibaca",
+				description:
+					"Mengubah seluruh notifikasi buyer yang belum dibaca menjadi sudah dibaca sekaligus.",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Semua notifikasi berhasil ditandai sudah dibaca" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/push/vapid-public-key": {
+			get: {
+				tags: ["Buyer - Push Notifications"],
+				summary: "Ambil VAPID Public Key",
+				description:
+					"Mengambil VAPID Public Key untuk konfigurasi registrasi Service Worker Web Push pada browser pembeli (tanpa login).",
+				responses: {
+					"200": {
+						description: "Berhasil mengambil VAPID Public Key",
+						content: {
+							"application/json": {
+								schema: {
+									type: "object",
+									properties: {
+										success: { type: "boolean", example: true },
+										data: {
+											type: "object",
+											properties: {
+												vapid_public_key: {
+													type: "string",
+													example: "BNcR...",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"/api/v1/buyer/push/subscribe": {
+			post: {
+				tags: ["Buyer - Push Notifications"],
+				summary: "Daftar Langganan Web Push (Subscribe)",
+				description:
+					"Mendaftarkan atau memperbarui token langganan Web Push Notification (endpoint, auth, p256dh) untuk perangkat buyer.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/SubscribePushRequest" },
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Langganan push berhasil didaftarkan" },
+					"400": { description: "Validasi payload gagal" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+			delete: {
+				tags: ["Buyer - Push Notifications"],
+				summary: "Hapus Langganan Web Push (Unsubscribe)",
+				description:
+					"Menghapus registrasi endpoint Web Push notification milik buyer yang sedang login.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/UnsubscribePushRequest" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Langganan push berhasil dihapus" },
+					"400": { description: "Validasi payload gagal" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Push subscription tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/buyer/history/batches": {
+			get: {
+				tags: ["Buyer - History"],
+				summary: "Riwayat Batch yang Telah Lunas",
+				description:
+					"Mengambil daftar riwayat batch pesanan milik buyer yang status invoice-nya sudah lunas (PAID).",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil riwayat batch" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/buyer/history/payments": {
+			get: {
+				tags: ["Buyer - History"],
+				summary: "Riwayat Pembayaran yang Disetujui",
+				description:
+					"Mengambil daftar riwayat seluruh transaksi pembayaran milik buyer yang status verifikasinya telah disetujui (APPROVED).",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil riwayat pembayaran" },
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
 				},
