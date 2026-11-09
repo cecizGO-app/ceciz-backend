@@ -10,6 +10,7 @@ export async function getProfile(buyerId: string) {
 			email: true,
 			image: true,
 			contact: true,
+			idLine: true,
 			address: true,
 			isOnboarded: true,
 			role: true,
@@ -24,6 +25,7 @@ export async function updateProfile(buyerId: string, data: UpdateProfileInput) {
 		data: {
 			...(data.name !== undefined && { name: data.name }),
 			...(data.contact !== undefined && { contact: data.contact }),
+			...(data.idLine !== undefined && { idLine: data.idLine }),
 			...(data.address !== undefined && { address: data.address }),
 		},
 		select: {
@@ -32,6 +34,7 @@ export async function updateProfile(buyerId: string, data: UpdateProfileInput) {
 			email: true,
 			image: true,
 			contact: true,
+			idLine: true,
 			address: true,
 			isOnboarded: true,
 		},

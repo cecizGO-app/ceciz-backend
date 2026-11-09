@@ -1,4 +1,4 @@
-﻿import "dotenv/config";
+import "dotenv/config";
 import { apiReference } from "@scalar/express-api-reference";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
@@ -10,6 +10,7 @@ import { notFound } from "@/middleware/notFound";
 import { batchesRouter as adminBatchesRouter } from "@/modules/admin/batches/batches.routes";
 import { paymentsRouter as adminPaymentsRouter } from "@/modules/admin/payments/payments.routes";
 import { trackingRouter as adminTrackingRouter } from "@/modules/admin/tracking/tracking.routes";
+import { taxRouter as adminTaxRouter } from "@/modules/admin/tax/tax.routes";
 import { batchesRouter as buyerBatchesRouter } from "@/modules/buyer/batches/batches.routes";
 import { invoicesRouter as buyerInvoicesRouter } from "@/modules/buyer/invoices/invoices.routes";
 import { ordersRouter as buyerOrdersRouter } from "@/modules/buyer/orders/orders.routes";
@@ -68,6 +69,7 @@ app.use(express.json());
 app.use(adminBatchesRouter);
 app.use(adminPaymentsRouter);
 app.use(adminTrackingRouter);
+app.use(adminTaxRouter);
 
 // Buyer Routes
 app.use(buyerBatchesRouter);
