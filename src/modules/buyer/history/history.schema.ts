@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { z } from "zod";
 import { paginationSchema } from "@/lib/pagination";
 
 export const getHistoryQuerySchema = paginationSchema;

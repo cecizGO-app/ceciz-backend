@@ -41,7 +41,9 @@ beforeEach(() => {
 
 describe("getNotifications", () => {
 	it("returns paginated notifications without filter", async () => {
-		vi.mocked(prisma.notification.findMany).mockResolvedValue([mockNotif] as never);
+		vi.mocked(prisma.notification.findMany).mockResolvedValue([
+			mockNotif,
+		] as never);
 		vi.mocked(prisma.notification.count).mockResolvedValue(1);
 
 		const result = await getNotifications(buyerId, { page: 1, limit: 20 });
@@ -57,17 +59,21 @@ describe("getNotifications", () => {
 
 		await getNotifications(buyerId, { page: 1, limit: 20, is_read: "true" });
 
-		const whereArg = vi.mocked(prisma.notification.findMany).mock.calls[0]?.[0]?.where;
+		const whereArg = vi.mocked(prisma.notification.findMany).mock.calls[0]?.[0]
+			?.where;
 		expect(whereArg).toMatchObject({ buyerId, isRead: true });
 	});
 
 	it("filters by is_read=false", async () => {
-		vi.mocked(prisma.notification.findMany).mockResolvedValue([mockNotif] as never);
+		vi.mocked(prisma.notification.findMany).mockResolvedValue([
+			mockNotif,
+		] as never);
 		vi.mocked(prisma.notification.count).mockResolvedValue(1);
 
 		await getNotifications(buyerId, { page: 1, limit: 20, is_read: "false" });
 
-		const whereArg = vi.mocked(prisma.notification.findMany).mock.calls[0]?.[0]?.where;
+		const whereArg = vi.mocked(prisma.notification.findMany).mock.calls[0]?.[0]
+			?.where;
 		expect(whereArg).toMatchObject({ buyerId, isRead: false });
 	});
 });
@@ -92,7 +98,9 @@ describe("markAsRead", () => {
 	});
 
 	it("marks notification as read when found", async () => {
-		vi.mocked(prisma.notification.findFirst).mockResolvedValue(mockNotif as never);
+		vi.mocked(prisma.notification.findFirst).mockResolvedValue(
+			mockNotif as never,
+		);
 		vi.mocked(prisma.notification.update).mockResolvedValue({
 			id: "notif-1",
 			isRead: true,
@@ -106,12 +114,15 @@ describe("markAsRead", () => {
 
 describe("markAllAsRead", () => {
 	it("calls updateMany with correct where clause", async () => {
-		vi.mocked(prisma.notification.updateMany).mockResolvedValue({ count: 3 } as never);
+		vi.mocked(prisma.notification.updateMany).mockResolvedValue({
+			count: 3,
+		} as never);
 
 		const result = await markAllAsRead(buyerId);
 		expect(result).toMatchObject({ updated: 3 });
 
-		const whereArg = vi.mocked(prisma.notification.updateMany).mock.calls[0]?.[0]?.where;
+		const whereArg = vi.mocked(prisma.notification.updateMany).mock
+			.calls[0]?.[0]?.where;
 		expect(whereArg).toMatchObject({ buyerId, isRead: false });
 	});
 });

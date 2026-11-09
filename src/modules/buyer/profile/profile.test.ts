@@ -2,8 +2,9 @@
  * Integration tests for the buyer profile endpoints.
  * Uses supertest against the Express app with a mocked prisma client.
  */
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+
 import request from "supertest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import app from "@/server";
 
 // ---------------------------------------------------------------------------
@@ -105,7 +106,9 @@ describe("PATCH /api/v1/buyer/me", () => {
 	it("returns 401 when not authenticated", async () => {
 		vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
-		const res = await request(app).patch("/api/v1/buyer/me").send({ name: "New Name" });
+		const res = await request(app)
+			.patch("/api/v1/buyer/me")
+			.send({ name: "New Name" });
 		expect(res.status).toBe(401);
 	});
 

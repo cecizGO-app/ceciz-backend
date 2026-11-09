@@ -73,7 +73,8 @@ export const openApiSpec = {
 		},
 		{
 			name: "Buyer - History",
-			description: "Riwayat batch yang telah lunas dan pembayaran yang disetujui",
+			description:
+				"Riwayat batch yang telah lunas dan pembayaran yang disetujui",
 		},
 		{
 			name: "Buyer - Profile",
@@ -1811,7 +1812,9 @@ export const openApiSpec = {
 					"Mengubah seluruh notifikasi buyer yang belum dibaca menjadi sudah dibaca sekaligus.",
 				security: [{ cookieAuth: [] }],
 				responses: {
-					"200": { description: "Semua notifikasi berhasil ditandai sudah dibaca" },
+					"200": {
+						description: "Semua notifikasi berhasil ditandai sudah dibaca",
+					},
 					"401": { description: "Unauthorized" },
 					"403": { description: "Forbidden" },
 				},
