@@ -35,6 +35,11 @@ export const openApiSpec = {
 				"Operasi verifikasi, penolakan, pencatatan manual, dan statistik pembayaran (Khusus role OWNER & STAFF)",
 		},
 		{
+			name: "Admin - Tax",
+			description:
+				"Operasi penagihan pajak (Bea Cukai) multi-batch, rilis periodik, preview item WH INA, dan verifikasi bukti bayar pajak (Khusus role OWNER & STAFF)",
+		},
+		{
 			name: "Storage & Upload",
 			description: "Unggah file dan gambar ke Cloudflare R2 storage",
 		},
@@ -358,6 +363,119 @@ export const openApiSpec = {
 					rejectReason: {
 						type: "string",
 						description: "Alasan jika ditolak",
+					},
+				},
+			},
+			ReleaseTaxItemInput: {
+				type: "object",
+				required: [
+					"itemId",
+					"buyerId",
+					"batchId",
+					"item",
+					"pcs",
+					"rateAcuan",
+					"subtotal",
+				],
+				properties: {
+					itemId: { type: "string", description: "ID batch item" },
+					buyerId: { type: "string", description: "ID buyer" },
+					batchId: { type: "string", description: "ID batch" },
+					item: { type: "string", description: "Deskripsi barang dan qty" },
+					pcs: { type: "integer", default: 1 },
+					category: {
+						type: "string",
+						enum: ["PC", "Non-PC"],
+						default: "PC",
+					},
+					rateAcuan: {
+						type: "number",
+						description: "Nominal tarif pajak satuan",
+					},
+					rateLabel: {
+						type: "string",
+						description: "Label tarif pajak acuan",
+					},
+					subtotal: {
+						type: "number",
+						description: "Total tarif pajak item",
+					},
+				},
+			},
+			ReleaseTaxRequest: {
+				type: "object",
+				required: ["releaseName", "releasePeriod"],
+				properties: {
+					releaseName: {
+						type: "string",
+						description: "Nama rilis tagihan",
+						example: "TAGIHAN TAX 24",
+					},
+					releasePeriod: {
+						type: "string",
+						description: "Periode tagihan tax",
+						example: "September 2026",
+					},
+					deadlinePayment: {
+						type: "string",
+						format: "date-time",
+						description:
+							"Batas waktu pembayaran (Default: H+72 jam dari rilis)",
+						example: "2026-09-25T23:59:00.000Z",
+					},
+					maxCheckoutDate: {
+						type: "string",
+						format: "date-time",
+						description:
+							"Batas maksimal timbun di WH (Default: H+60 hari dari rilis)",
+						example: "2026-11-24T23:59:00.000Z",
+					},
+					notes: {
+						type: "string",
+						description: "Catatan tambahan untuk buyer",
+						example: "Mohon cantumkan nomor invoice di berita transfer.",
+					},
+					items: {
+						type: "array",
+						items: { $ref: "#/components/schemas/ReleaseTaxItemInput" },
+						description:
+							"Daftar item terpilih untuk dirilis (opsional, jika kosong merilis seluruh item eligible)",
+					},
+				},
+			},
+			VerifyTaxPaymentRequest: {
+				type: "object",
+				required: ["status"],
+				properties: {
+					status: {
+						type: "string",
+						enum: ["APPROVED", "REJECTED"],
+						description: "Keputusan verifikasi bukti pembayaran pajak",
+					},
+					rejectReason: {
+						type: "string",
+						description:
+							"Alasan penolakan bukti bayar (wajib jika status REJECTED)",
+						example: "Nominal transfer tidak sesuai",
+					},
+				},
+			},
+			BulkVerifyTaxPaymentRequest: {
+				type: "object",
+				required: ["paymentIds", "status"],
+				properties: {
+					paymentIds: {
+						type: "array",
+						items: { type: "string" },
+						description: "Daftar ID pembayaran pajak yang ingin diverifikasi",
+					},
+					status: {
+						type: "string",
+						enum: ["APPROVED", "REJECTED"],
+					},
+					rejectReason: {
+						type: "string",
+						description: "Alasan penolakan jika status REJECTED",
 					},
 				},
 			},
@@ -1219,6 +1337,267 @@ export const openApiSpec = {
 				responses: {
 					"200": { description: "Pembayaran berhasil diperbarui" },
 					"400": { description: "Validasi data gagal" },
+				},
+			},
+		},
+		"/api/v1/admin/taxes/stats": {
+			get: {
+				tags: ["Admin - Tax"],
+				summary: "Statistik Dashboard Tagihan Tax (4 Kartu)",
+				description:
+					"Mengambil metrik ringkasan tagihan tax: Periode Rilis Aktif, Belum Lunas (Outstanding), Menunggu Verifikasi (bukti bayar pending), Pajak Terkumpul Bulan Berjalan, dan daftar opsi periode.",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil statistik tagihan tax" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/admin/taxes/preview": {
+			get: {
+				tags: ["Admin - Tax"],
+				summary: "Preview Item Arrived WH INA untuk Rilis Tax (Step 1 Modal)",
+				description:
+					"Mengambil semua item pesanan dari batch berstatus ARRIVED_WH_INA yang belum pernah ditagih tax beserta kalkulasi otomatis tarif pajak acuan dan subtotal per item.",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil preview item rilis tax" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/admin/taxes/releases": {
+			post: {
+				tags: ["Admin - Tax"],
+				summary: "Rilis Tagihan Tax Multi-Batch Baru (Step 2 & 3 Modal)",
+				description:
+					"Menerbitkan TaxInvoice secara periodik multi-batch per buyer dengan deadline pembayaran dan batas maksimal timbun (max checkout). Mengirimkan notifikasi in-app ke pembeli.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/ReleaseTaxRequest" },
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Berhasil merilis tagihan tax kepada buyer" },
+					"400": { description: "Validasi data gagal" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/admin/taxes/invoices": {
+			get: {
+				tags: ["Admin - Tax"],
+				summary: "Daftar Tagihan Tax Invoice (Tabel Utama)",
+				description:
+					"Mengambil daftar tagihan tax dengan dukungan pencarian teks (nomor invoice/buyer/batch/barang), filter status (ALL, UNPAID, PENDING, PAID, OVERDUE), filter periode, filter negara batch, dan paginasi.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "search",
+						in: "query",
+						required: false,
+						schema: { type: "string" },
+						description: "Pencarian nomor invoice, buyer, batch, atau barang",
+					},
+					{
+						name: "status",
+						in: "query",
+						required: false,
+						schema: {
+							type: "string",
+							enum: ["ALL", "UNPAID", "PENDING", "PAID", "OVERDUE"],
+						},
+						description: "Filter status invoice",
+					},
+					{
+						name: "period",
+						in: "query",
+						required: false,
+						schema: { type: "string" },
+						description: "Filter nama periode rilis",
+					},
+					{
+						name: "country",
+						in: "query",
+						required: false,
+						schema: { type: "string" },
+						description: "Filter negara batch",
+					},
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar tagihan tax" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/admin/taxes/invoices/{id}": {
+			get: {
+				tags: ["Admin - Tax"],
+				summary: "Detail Tagihan Tax Invoice Berdasarkan ID",
+				description:
+					"Mengambil informasi lengkap satu invoice tax: rincian barang per batch, data buyer, total pajak, batas waktu, dan riwayat pembayaran.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID tagihan tax invoice",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil detail tagihan tax" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Tagihan tax tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/taxes/payments": {
+			get: {
+				tags: ["Admin - Tax"],
+				summary: "Daftar Bukti Bayar Pajak untuk Verifikasi",
+				description:
+					"Mengambil antrian bukti bayar pajak yang dikirimkan oleh buyer. Mendukung filter status verifikasi (ALL, PENDING, APPROVED, REJECTED), pencarian, dan paginasi.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "status",
+						in: "query",
+						required: false,
+						schema: {
+							type: "string",
+							enum: ["ALL", "PENDING", "APPROVED", "REJECTED"],
+						},
+						description: "Filter status verifikasi",
+					},
+					{
+						name: "search",
+						in: "query",
+						required: false,
+						schema: { type: "string" },
+						description: "Cari invoice, ID bayar, atau nama buyer",
+					},
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar bukti bayar pajak" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/admin/taxes/payments/{id}": {
+			get: {
+				tags: ["Admin - Tax"],
+				summary: "Detail Bukti Pembayaran Pajak Berdasarkan ID",
+				description:
+					"Mengambil informasi rincian satu bukti bayar pajak, URL gambar bukti transfer, dan status verifikasi.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID pembayaran tax",
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil detail pembayaran pajak" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Pembayaran tax tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/taxes/payments/{id}/verify": {
+			patch: {
+				tags: ["Admin - Tax"],
+				summary: "Verifikasi Bukti Pembayaran Pajak (Setujui / Tolak)",
+				description:
+					"Menyetujui (APPROVED) atau menolak (REJECTED) bukti pembayaran pajak. Jika disetujui dan invoice lunas, status invoice otomatis berubah menjadi PAID. Jika ditolak, rejectReason wajib diisi.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+						description: "ID pembayaran tax",
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: { $ref: "#/components/schemas/VerifyTaxPaymentRequest" },
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Pembayaran pajak berhasil diverifikasi" },
+					"400": { description: "Validasi data gagal" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+					"404": { description: "Pembayaran tax tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/taxes/payments/bulk-verify": {
+			post: {
+				tags: ["Admin - Tax"],
+				summary: "Verifikasi Massal Pembayaran Pajak (Bulk Verify)",
+				description:
+					"Menyetujui atau menolak beberapa bukti pembayaran pajak sekaligus.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								$ref: "#/components/schemas/BulkVerifyTaxPaymentRequest",
+							},
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Pembayaran pajak berhasil diproses" },
+					"400": { description: "Validasi data gagal" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
 				},
 			},
 		},
