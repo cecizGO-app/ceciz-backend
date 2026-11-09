@@ -1,11 +1,14 @@
 import type { Request, Response } from "express";
 import { sendSuccess } from "@/lib/response";
-import { getTrackingById, getTrackings } from "./tracking.service.js";
 import type { GetTrackingQuery } from "./tracking.schema.js";
+import { getTrackingById, getTrackings } from "./tracking.service.js";
 
 export async function handleGetTrackings(req: Request, res: Response) {
 	const buyerId = req.user!.id;
-	const result = await getTrackings(buyerId, req.query as unknown as GetTrackingQuery);
+	const result = await getTrackings(
+		buyerId,
+		req.query as unknown as GetTrackingQuery,
+	);
 	return sendSuccess(res, result.data, 200, result.meta);
 }
 

@@ -1,11 +1,14 @@
 import type { Request, Response } from "express";
 import { sendSuccess } from "@/lib/response";
+import type {
+	SubscribePushInput,
+	UnsubscribePushInput,
+} from "./push.schema.js";
 import {
 	getVapidPublicKey,
 	subscribePush,
 	unsubscribePush,
 } from "./push.service.js";
-import type { SubscribePushInput, UnsubscribePushInput } from "./push.schema.js";
 
 export async function handleGetVapidPublicKey(_req: Request, res: Response) {
 	const result = getVapidPublicKey();

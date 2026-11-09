@@ -6,7 +6,10 @@ export function getVapidPublicKey() {
 	return { vapid_public_key: process.env.VAPID_PUBLIC_KEY ?? "" };
 }
 
-export async function subscribePush(buyerId: string, input: SubscribePushInput) {
+export async function subscribePush(
+	buyerId: string,
+	input: SubscribePushInput,
+) {
 	const subscription = await prisma.pushSubscription.upsert({
 		where: { endpoint: input.endpoint },
 		create: {

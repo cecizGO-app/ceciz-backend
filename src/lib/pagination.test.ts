@@ -6,15 +6,24 @@ import { buildMeta, getPaginationArgs } from "@/lib/pagination";
 
 describe("getPaginationArgs", () => {
 	it("returns skip=0 and correct take for page 1", () => {
-		expect(getPaginationArgs({ page: 1, limit: 20 })).toEqual({ skip: 0, take: 20 });
+		expect(getPaginationArgs({ page: 1, limit: 20 })).toEqual({
+			skip: 0,
+			take: 20,
+		});
 	});
 
 	it("calculates correct skip for page 2", () => {
-		expect(getPaginationArgs({ page: 2, limit: 20 })).toEqual({ skip: 20, take: 20 });
+		expect(getPaginationArgs({ page: 2, limit: 20 })).toEqual({
+			skip: 20,
+			take: 20,
+		});
 	});
 
 	it("calculates correct skip for page 3 limit 10", () => {
-		expect(getPaginationArgs({ page: 3, limit: 10 })).toEqual({ skip: 20, take: 10 });
+		expect(getPaginationArgs({ page: 3, limit: 10 })).toEqual({
+			skip: 20,
+			take: 10,
+		});
 	});
 });
 

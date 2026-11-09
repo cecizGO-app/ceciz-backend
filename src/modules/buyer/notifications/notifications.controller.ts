@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 import { sendSuccess } from "@/lib/response";
+import type { GetNotificationsQuery } from "./notifications.schema.js";
 import {
 	getNotifications,
 	getUnreadCount,
 	markAllAsRead,
 	markAsRead,
 } from "./notifications.service.js";
-import type { GetNotificationsQuery } from "./notifications.schema.js";
 
 export async function handleGetNotifications(req: Request, res: Response) {
 	const buyerId = req.user!.id;

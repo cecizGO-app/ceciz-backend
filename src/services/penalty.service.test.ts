@@ -9,12 +9,6 @@ import {
 	toWibDay,
 } from "@/services/penalty.service";
 
-// Helper: create a UTC date that represents a specific WIB calendar day
-function wibDate(year: number, month: number, day: number, hour = 0): Date {
-	// WIB = UTC+7, so WIB midnight = UTC 17:00 the previous day
-	return new Date(Date.UTC(year, month - 1, day, hour - 7));
-}
-
 describe("toWibDay", () => {
 	it("converts UTC midnight to WIB day boundary", () => {
 		// UTC 2024-01-15 00:00 = WIB 2024-01-15 07:00 → WIB day = 2024-01-15

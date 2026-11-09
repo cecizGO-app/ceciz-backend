@@ -1,6 +1,6 @@
+import { AppError } from "@/lib/errors";
 import { buildMeta, getPaginationArgs } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
-import { AppError } from "@/lib/errors";
 import type { GetTrackingQuery } from "./tracking.schema.js";
 
 export async function getTrackings(buyerId: string, query: GetTrackingQuery) {
