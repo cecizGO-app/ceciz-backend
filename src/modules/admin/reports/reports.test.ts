@@ -143,6 +143,31 @@ describe("createProfitPeriod & deleteProfitPeriod", () => {
 		expect(created.adminAAmount).toBe(0);
 	});
 
+	it("throws NOT_FOUND when any selected batch is missing", async () => {
+		vi.mocked(prisma.batch.findMany).mockResolvedValue([
+			{
+				id: "b-1",
+				countryCode: CountryCode.CH,
+				batchNumber: 22,
+				labaBersih: "185400",
+			},
+		] as never);
+
+		await expect(
+			createProfitPeriod({
+				periodName: "TAX 1-3",
+				startDate: new Date("2026-09-01"),
+				endDate: new Date("2026-09-30"),
+				batchIds: ["b-1", "b-missing"],
+				packingCost: 0,
+				otherCost: 0,
+				adminAPercent: 80,
+				adminBPercent: 20,
+				goSavingsPercent: 0,
+			}),
+		).rejects.toMatchObject({ code: "NOT_FOUND" });
+	});
+
 	it("deletes profit period", async () => {
 		vi.mocked(prisma.profitPeriod.findUnique).mockResolvedValue({
 			id: "pp-1",

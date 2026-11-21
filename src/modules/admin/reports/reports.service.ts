@@ -185,8 +185,9 @@ export async function getProfitReport(query: GetProfitReportQuery) {
 }
 
 export async function createProfitPeriod(input: CreateProfitPeriodInput) {
+	const uniqueBatchIds = [...new Set(input.batchIds)];
 	const batches = await prisma.batch.findMany({
-		where: { id: { in: input.batchIds } },
+		where: { id: { in: uniqueBatchIds } },
 		select: {
 			id: true,
 			countryCode: true,
@@ -195,8 +196,8 @@ export async function createProfitPeriod(input: CreateProfitPeriodInput) {
 		},
 	});
 
-	if (batches.length === 0) {
-		throw AppError.notFound("Batch yang dipilih tidak ditemukan");
+	if (batches.length !== uniqueBatchIds.length) {
+		throw AppError.notFound("Beberapa batch yang dipilih tidak ditemukan");
 	}
 
 	const batchCodes = batches.map((b) =>
