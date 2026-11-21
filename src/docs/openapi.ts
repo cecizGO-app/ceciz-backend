@@ -55,6 +55,11 @@ export const openApiSpec = {
 				"Buku kas manual pencatatan pemasukan dan pengeluaran operasional (Khusus role OWNER & STAFF)",
 		},
 		{
+			name: "Admin - Financial Reports",
+			description:
+				"Laporan laba GO per periode, gaji/fee admin per periode, dan rekap pembayaran (Khusus role OWNER)",
+		},
+		{
 			name: "Storage & Upload",
 			description: "Unggah file dan gambar ke Cloudflare R2 storage",
 		},
@@ -1531,6 +1536,96 @@ export const openApiSpec = {
 					"403": { description: "Hanya OWNER" },
 					"404": { description: "Invoice tidak ditemukan" },
 					"409": { description: "Invoice sudah lunas / sudah di-waive" },
+				},
+			},
+		},
+		"/api/v1/admin/reports/profit": {
+			get: {
+				tags: ["Admin - Financial Reports"],
+				summary: "Laporan Laba GO & Riwayat Periode (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil laporan laba" },
+				},
+			},
+		},
+		"/api/v1/admin/reports/profit/periods": {
+			post: {
+				tags: ["Admin - Financial Reports"],
+				summary: "Simpan Penutupan Laba per Periode (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: { "201": { description: "Periode laba berhasil disimpan" } },
+			},
+		},
+		"/api/v1/admin/reports/profit/periods/{id}": {
+			delete: {
+				tags: ["Admin - Financial Reports"],
+				summary: "Hapus Riwayat Periode Laba (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: { "200": { description: "Berhasil dihapus" } },
+			},
+		},
+		"/api/v1/admin/reports/admin-fees": {
+			get: {
+				tags: ["Admin - Financial Reports"],
+				summary: "Rekap Gaji / Fee Admin per Periode (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil data fee admin" },
+				},
+			},
+			post: {
+				tags: ["Admin - Financial Reports"],
+				summary: "Tambah Periode Fee Admin (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: { "201": { description: "Berhasil ditambahkan" } },
+			},
+		},
+		"/api/v1/admin/reports/admin-fees/{id}": {
+			patch: {
+				tags: ["Admin - Financial Reports"],
+				summary: "Edit Periode Fee Admin (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: { "200": { description: "Berhasil diperbarui" } },
+			},
+			delete: {
+				tags: ["Admin - Financial Reports"],
+				summary: "Hapus Periode Fee Admin (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: { "200": { description: "Berhasil dihapus" } },
+			},
+		},
+		"/api/v1/admin/reports/payment-summary": {
+			get: {
+				tags: ["Admin - Financial Reports"],
+				summary: "Rekap Pembayaran per Metode (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil rekap pembayaran" },
 				},
 			},
 		},

@@ -508,3 +508,53 @@ model PushSubscription {
   @@index([buyerId])
   @@map("push_subscriptions")
 }
+
+// ==========================================
+// FINANCIAL REPORTS (OWNER-ONLY)
+// ==========================================
+
+model ProfitPeriod {
+  id               String   @id @default(cuid())
+  periodName       String
+  startDate        DateTime
+  endDate          DateTime
+  batchIds         String[] @default([])
+  batchCodes       String[] @default([])
+  totalRevenue     Decimal  @default(0) @db.Decimal(14, 2)
+  packingCost      Decimal  @default(0) @db.Decimal(14, 2)
+  otherCost        Decimal  @default(0) @db.Decimal(14, 2)
+  otherCostNote    String?
+  totalCost        Decimal  @default(0) @db.Decimal(14, 2)
+  netProfit        Decimal  @default(0) @db.Decimal(14, 2)
+  adminAPercent    Int      @default(80)
+  adminBPercent    Int      @default(20)
+  goSavingsPercent Int      @default(0)
+  adminAAmount     Decimal  @default(0) @db.Decimal(14, 2)
+  adminBAmount     Decimal  @default(0) @db.Decimal(14, 2)
+  goSavingsAmount  Decimal  @default(0) @db.Decimal(14, 2)
+  notes            String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([startDate, endDate])
+  @@map("profit_periods")
+}
+
+model AdminFeePeriod {
+  id          String   @id @default(cuid())
+  periodName  String
+  adminName   String
+  batchCount  Int      @default(0)
+  batchIds    String[] @default([])
+  feeNyelem   Decimal  @default(0) @db.Decimal(14, 2)
+  feeRekap    Decimal  @default(0) @db.Decimal(14, 2)
+  totalFee    Decimal  @default(0) @db.Decimal(14, 2)
+  notes       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([periodName])
+  @@map("admin_fee_periods")
+}
