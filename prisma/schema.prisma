@@ -432,12 +432,15 @@ model CashflowEntry {
   type          CashflowType
   category      String?
   paymentMethod PaymentMethod?
+  notes         String?
   createdById   String
   createdBy     User           @relation(fields: [createdById], references: [id])
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
+  @@index([entryDate])
+  @@index([type])
   @@map("cashflow_entries")
 }
 

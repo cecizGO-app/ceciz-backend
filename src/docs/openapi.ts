@@ -50,6 +50,11 @@ export const openApiSpec = {
 				"Pengelolaan pesanan PO Album / CO Web dengan skema DP+FP dan status checkout web (Khusus role OWNER & STAFF)",
 		},
 		{
+			name: "Admin - Cashflow",
+			description:
+				"Buku kas manual pencatatan pemasukan dan pengeluaran operasional (Khusus role OWNER & STAFF)",
+		},
+		{
 			name: "Storage & Upload",
 			description: "Unggah file dan gambar ke Cloudflare R2 storage",
 		},
@@ -1527,6 +1532,101 @@ export const openApiSpec = {
 					"404": { description: "Invoice tidak ditemukan" },
 					"409": { description: "Invoice sudah lunas / sudah di-waive" },
 				},
+			},
+		},
+		"/api/v1/admin/cashflow/stats": {
+			get: {
+				tags: ["Admin - Cashflow"],
+				summary: "Statistik Cashflow & Buku Kas (4 Kartu)",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil statistik cashflow" },
+				},
+			},
+		},
+		"/api/v1/admin/cashflow": {
+			get: {
+				tags: ["Admin - Cashflow"],
+				summary: "Daftar Transaksi Cashflow",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{ name: "search", in: "query", schema: { type: "string" } },
+					{
+						name: "type",
+						in: "query",
+						schema: { type: "string", enum: ["ALL", "INCOME", "EXPENSE"] },
+					},
+					{ name: "category", in: "query", schema: { type: "string" } },
+					{
+						name: "paymentMethod",
+						in: "query",
+						schema: {
+							type: "string",
+							enum: ["ALL", "BCA", "QRIS", "SEABANK", "SPAY", "CASH"],
+						},
+					},
+					{
+						name: "startDate",
+						in: "query",
+						schema: { type: "string", format: "date" },
+					},
+					{
+						name: "endDate",
+						in: "query",
+						schema: { type: "string", format: "date" },
+					},
+					{
+						name: "page",
+						in: "query",
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						schema: { type: "integer", default: 20, maximum: 100 },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar cashflow" },
+				},
+			},
+			post: {
+				tags: ["Admin - Cashflow"],
+				summary: "Catat Transaksi Cashflow Baru",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"201": { description: "Transaksi cashflow berhasil dicatat" },
+				},
+			},
+		},
+		"/api/v1/admin/cashflow/{id}": {
+			patch: {
+				tags: ["Admin - Cashflow"],
+				summary: "Update Transaksi Cashflow",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: { "200": { description: "Berhasil diperbarui" } },
+			},
+			delete: {
+				tags: ["Admin - Cashflow"],
+				summary: "Hapus Transaksi Cashflow",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: { "200": { description: "Berhasil dihapus" } },
 			},
 		},
 		"/api/v1/admin/po-albums/stats": {
