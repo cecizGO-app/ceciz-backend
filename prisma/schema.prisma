@@ -390,21 +390,6 @@ model TaxPayment {
   @@map("tax_payments")
 }
 
-model WhInvoice {
-  id               String   @id @default(cuid())
-  whInvoiceTotal   Decimal  @db.Decimal(14, 2)
-  coveredBatchIds  String[] @default([])
-  allocationRatio  Json?    // {batch_id: ratio}
-  allocatedAmount  Json?    // {batch_id: amount}
-  invoiceDate      DateTime
-  notes            String?
-
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@map("wh_invoices")
-}
-
 // ==========================================
 // NOTIFICATIONS & CASHFLOW
 // ==========================================
