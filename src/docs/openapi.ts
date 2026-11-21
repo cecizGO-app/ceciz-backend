@@ -60,6 +60,11 @@ export const openApiSpec = {
 				"Laporan laba GO per periode, gaji/fee admin per periode, dan rekap pembayaran (Khusus role OWNER)",
 		},
 		{
+			name: "Admin - Settings",
+			description:
+				"Konfigurasi global sistem: Link Checkout Buyer, Fee Nyelem, Rate Harian, Fee Rekap, Penalty Rules, Tax Rate, dan Max Storage (Khusus role OWNER)",
+		},
+		{
 			name: "Storage & Upload",
 			description: "Unggah file dan gambar ke Cloudflare R2 storage",
 		},
@@ -1537,6 +1542,28 @@ export const openApiSpec = {
 					"404": { description: "Invoice tidak ditemukan" },
 					"409": { description: "Invoice sudah lunas / sudah di-waive" },
 				},
+			},
+		},
+		"/api/v1/admin/settings": {
+			get: {
+				tags: ["Admin - Settings"],
+				summary: "Ambil Pengaturan Global (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: { "200": { description: "Berhasil mengambil pengaturan" } },
+			},
+			patch: {
+				tags: ["Admin - Settings"],
+				summary: "Update Pengaturan Global (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: { "200": { description: "Pengaturan berhasil diperbarui" } },
+			},
+		},
+		"/api/v1/admin/settings/reset": {
+			post: {
+				tags: ["Admin - Settings"],
+				summary: "Reset Pengaturan ke Default (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: { "200": { description: "Pengaturan berhasil direset" } },
 			},
 		},
 		"/api/v1/admin/reports/profit": {

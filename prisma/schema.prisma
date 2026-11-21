@@ -486,7 +486,15 @@ model Setting {
   taxRateNonPcPerGram Decimal? @db.Decimal(12, 2)
   feeRekapTiers       Json     // [{ "min_pcs": 1, "max_pcs": 1, "fee": 2000 }, ...]
   maxStorageDays      Int      @default(60)
-  csContact             String?
+  csContact           String?
+
+  // Link Checkout Buyer
+  googleFormUrl       String?
+  shopeeCheckoutUrl   String?
+  checkoutStartDate   DateTime?
+  checkoutEndDate     DateTime?
+  googleFormOpen      Boolean  @default(false)
+  shopeeOpen          Boolean  @default(false)
 
   updatedAt           DateTime @updatedAt
 

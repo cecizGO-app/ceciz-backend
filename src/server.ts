@@ -13,6 +13,7 @@ import { invoicesRouter as adminInvoicesRouter } from "@/modules/admin/invoices/
 import { paymentsRouter as adminPaymentsRouter } from "@/modules/admin/payments/payments.routes";
 import { poAlbumsRouter as adminPoAlbumsRouter } from "@/modules/admin/po-albums/po-albums.routes";
 import { reportsRouter as adminReportsRouter } from "@/modules/admin/reports/reports.routes";
+import { settingsRouter as adminSettingsRouter } from "@/modules/admin/settings/settings.routes";
 import { taxRouter as adminTaxRouter } from "@/modules/admin/tax/tax.routes";
 import { trackingRouter as adminTrackingRouter } from "@/modules/admin/tracking/tracking.routes";
 import { batchesRouter as buyerBatchesRouter } from "@/modules/buyer/batches/batches.routes";
@@ -76,6 +77,7 @@ app.use(adminInvoicesRouter);
 app.use(adminPaymentsRouter);
 app.use(adminPoAlbumsRouter);
 app.use(adminReportsRouter);
+app.use(adminSettingsRouter);
 app.use(adminTrackingRouter);
 app.use(adminTaxRouter);
 
