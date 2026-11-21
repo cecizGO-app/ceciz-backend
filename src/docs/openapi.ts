@@ -742,6 +742,51 @@ export const openApiSpec = {
 				},
 			},
 		},
+		"/api/v1/admin/users": {
+			get: {
+				tags: ["Admin - Batches"],
+				summary: "Daftar User (Buyer / Admin) untuk Form Batch",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "role",
+						in: "query",
+						schema: { type: "string", enum: ["BUYER", "STAFF", "OWNER"] },
+					},
+					{ name: "search", in: "query", schema: { type: "string" } },
+				],
+				responses: { "200": { description: "Berhasil mengambil daftar user" } },
+			},
+		},
+		"/api/v1/admin/batches/form-options": {
+			get: {
+				tags: ["Admin - Batches"],
+				summary:
+					"Ambil Opsi Form Batch (Daftar Buyer, Admin Nyelem, Default Settings)",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil opsi form batch" },
+				},
+			},
+		},
+		"/api/v1/admin/batches/next-number": {
+			get: {
+				tags: ["Admin - Batches"],
+				summary: "Ambil Nomor Batch Berikutnya per Negara",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "countryCode",
+						in: "query",
+						required: true,
+						schema: { type: "string", enum: ["CH", "KR", "TH", "JP", "INA"] },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil nomor batch berikutnya" },
+				},
+			},
+		},
 		"/api/v1/admin/batches": {
 			post: {
 				tags: ["Admin - Batches"],
