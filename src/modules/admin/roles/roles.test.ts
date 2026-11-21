@@ -127,22 +127,24 @@ describe("Staff Accounts", () => {
 });
 
 describe("Permission Matrix", () => {
-	it("upserts default matrices safely and returns sorted list", async () => {
+	it("upserts default matrices only when empty and returns sorted list", async () => {
 		vi.mocked(prisma.rolePermission.upsert).mockResolvedValue({} as never);
-		vi.mocked(prisma.rolePermission.findMany).mockResolvedValue([
-			{
-				roleKey: "OPERATIONS_STAFF",
-				label: "Operations Staff",
-				permissions: {},
-				updatedAt: new Date(),
-			},
-			{
-				roleKey: "FINANCE_STAFF",
-				label: "Finance Staff",
-				permissions: {},
-				updatedAt: new Date(),
-			},
-		] as never);
+		vi.mocked(prisma.rolePermission.findMany)
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([
+				{
+					roleKey: "OPERATIONS_STAFF",
+					label: "Operations Staff",
+					permissions: {},
+					updatedAt: new Date(),
+				},
+				{
+					roleKey: "FINANCE_STAFF",
+					label: "Finance Staff",
+					permissions: {},
+					updatedAt: new Date(),
+				},
+			] as never);
 
 		const list = await getRolePermissions();
 		expect(list).toHaveLength(2);
