@@ -65,6 +65,11 @@ export const openApiSpec = {
 				"Konfigurasi global sistem: Link Checkout Buyer, Fee Nyelem, Rate Harian, Fee Rekap, Penalty Rules, Tax Rate, dan Max Storage (Khusus role OWNER)",
 		},
 		{
+			name: "Admin - Roles & Permissions",
+			description:
+				"Manajemen akun staff internal dan permission matrix per modul (Khusus role OWNER)",
+		},
+		{
 			name: "Storage & Upload",
 			description: "Unggah file dan gambar ke Cloudflare R2 storage",
 		},
@@ -1587,6 +1592,66 @@ export const openApiSpec = {
 					"404": { description: "Invoice tidak ditemukan" },
 					"409": { description: "Invoice sudah lunas / sudah di-waive" },
 				},
+			},
+		},
+		"/api/v1/admin/roles/staff": {
+			get: {
+				tags: ["Admin - Roles & Permissions"],
+				summary: "Daftar Akun Staff Internal (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar staff" },
+				},
+			},
+			post: {
+				tags: ["Admin - Roles & Permissions"],
+				summary: "Tambah Akun Staff Baru (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: { "201": { description: "Staff berhasil ditambahkan" } },
+			},
+		},
+		"/api/v1/admin/roles/staff/{id}": {
+			patch: {
+				tags: ["Admin - Roles & Permissions"],
+				summary: "Edit Akun Staff (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: { "200": { description: "Berhasil diperbarui" } },
+			},
+			delete: {
+				tags: ["Admin - Roles & Permissions"],
+				summary: "Hapus Akun Staff (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: { "200": { description: "Berhasil dihapus" } },
+			},
+		},
+		"/api/v1/admin/roles/permissions": {
+			get: {
+				tags: ["Admin - Roles & Permissions"],
+				summary: "Ambil Permission Matrix (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: { "200": { description: "Berhasil mengambil matrix" } },
+			},
+			patch: {
+				tags: ["Admin - Roles & Permissions"],
+				summary: "Update Permission Matrix (Khusus OWNER)",
+				security: [{ cookieAuth: [] }],
+				responses: { "200": { description: "Matrix berhasil diperbarui" } },
 			},
 		},
 		"/api/v1/admin/settings": {
