@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth";
 import { errorHandler } from "@/middleware/errorHandler";
 import { notFound } from "@/middleware/notFound";
 import { batchesRouter as adminBatchesRouter } from "@/modules/admin/batches/batches.routes";
+import { invoicesRouter as adminInvoicesRouter } from "@/modules/admin/invoices/invoices.routes";
 import { paymentsRouter as adminPaymentsRouter } from "@/modules/admin/payments/payments.routes";
 import { taxRouter as adminTaxRouter } from "@/modules/admin/tax/tax.routes";
 import { trackingRouter as adminTrackingRouter } from "@/modules/admin/tracking/tracking.routes";
@@ -67,6 +68,7 @@ app.use(express.json());
 
 // Admin Routes
 app.use(adminBatchesRouter);
+app.use(adminInvoicesRouter);
 app.use(adminPaymentsRouter);
 app.use(adminTrackingRouter);
 app.use(adminTaxRouter);

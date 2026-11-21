@@ -33,6 +33,7 @@ export async function getInvoices(buyerId: string, query: GetInvoicesQuery) {
 				totalAmount: true,
 				invoiceStatus: true,
 				deadlinePayment: true,
+				penaltyWaived: true,
 				createdAt: true,
 				batch: {
 					select: {
@@ -54,7 +55,7 @@ export async function getInvoices(buyerId: string, query: GetInvoicesQuery) {
 		const isPaid = inv.invoiceStatus === "PAID";
 		const penaltyAmount = isPaid
 			? 0
-			: calcPenalty(inv.deadlinePayment, penaltyPerDay, false, now);
+			: calcPenalty(inv.deadlinePayment, penaltyPerDay, inv.penaltyWaived, now);
 		const totalAmount = Number(inv.totalAmount);
 
 		return {
@@ -117,7 +118,12 @@ export async function getInvoiceById(buyerId: string, invoiceId: string) {
 	const isPaid = invoice.invoiceStatus === "PAID";
 	const penaltyAmount = isPaid
 		? 0
-		: calcPenalty(invoice.deadlinePayment, penaltyPerDay, false, now);
+		: calcPenalty(
+				invoice.deadlinePayment,
+				penaltyPerDay,
+				invoice.penaltyWaived,
+				now,
+			);
 	const totalAmount = Number(invoice.totalAmount);
 	const latestPayment = invoice.payments[0] ?? null;
 

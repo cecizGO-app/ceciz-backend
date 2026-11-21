@@ -35,6 +35,11 @@ export const openApiSpec = {
 				"Operasi verifikasi, penolakan, pencatatan manual, dan statistik pembayaran (Khusus role OWNER & STAFF)",
 		},
 		{
+			name: "Admin - Invoices",
+			description:
+				"Generate, monitoring, detail, dan pembebasan denda invoice batch per buyer (Khusus role OWNER & STAFF)",
+		},
+		{
 			name: "Admin - Tax",
 			description:
 				"Operasi penagihan pajak (Bea Cukai) multi-batch, rilis periodik, preview item WH INA, dan verifikasi bukti bayar pajak (Khusus role OWNER & STAFF)",
@@ -1337,6 +1342,185 @@ export const openApiSpec = {
 				responses: {
 					"200": { description: "Pembayaran berhasil diperbarui" },
 					"400": { description: "Validasi data gagal" },
+				},
+			},
+		},
+		"/api/v1/admin/invoices/stats": {
+			get: {
+				tags: ["Admin - Invoices"],
+				summary: "Statistik Invoice Batch (4 Kartu)",
+				description:
+					"Total tagihan, belum lunas (termasuk denda berjalan & jumlah overdue), bukti bayar menunggu verifikasi, dan pembayaran disetujui bulan berjalan.",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil statistik invoice" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/admin/invoices/preview/{batchId}": {
+			get: {
+				tags: ["Admin - Invoices"],
+				summary: "Preview Tagihan per Buyer sebelum Generate",
+				description:
+					"Mengelompokkan item batch per buyer dan menghitung total tagihan. Setiap buyer diberi action: CREATE, UPDATE, UNCHANGED, LOCKED (sudah ada pembayaran disetujui), atau SKIP_MISSING_PRICE (JP tanpa harga jual). Juga mengembalikan orphanInvoices (invoice yang buyer-nya sudah tidak punya item).",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "batchId",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil preview" },
+					"404": { description: "Batch tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/invoices/generate": {
+			post: {
+				tags: ["Admin - Invoices"],
+				summary: "Generate / Rilis Invoice Batch",
+				description:
+					"Membuat invoice baru untuk buyer yang belum punya, memperbarui invoice yang belum ada pembayaran disetujui (jika updateExisting=true), sinkron Order, dan mengirim notifikasi in-app. Deadline hanya diterapkan pada invoice baru.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["batchId"],
+								properties: {
+									batchId: { type: "string" },
+									deadlinePayment: {
+										type: "string",
+										format: "date-time",
+										description:
+											"Default: sekarang + Setting.deadlineBatchHours",
+									},
+									buyerIds: {
+										type: "array",
+										items: { type: "string" },
+										description: "Kosong = semua buyer di batch",
+									},
+									updateExisting: { type: "boolean", default: true },
+									notifyBuyers: { type: "boolean", default: true },
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Invoice berhasil di-generate" },
+					"400": { description: "Validasi gagal / tidak ada buyer" },
+					"404": { description: "Batch tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/invoices": {
+			get: {
+				tags: ["Admin - Invoices"],
+				summary: "Daftar Invoice Batch (Tabel Utama)",
+				description:
+					"Pencarian nomor invoice (INV-XXXXXX), nama/email/ID LINE buyer, judul atau kode batch (mis. CH-015). Status OVERDUE juga mencakup invoice UNPAID yang sudah lewat deadline.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{ name: "search", in: "query", schema: { type: "string" } },
+					{
+						name: "status",
+						in: "query",
+						schema: {
+							type: "string",
+							enum: [
+								"ALL",
+								"UNPAID",
+								"AWAITING_VERIFICATION",
+								"PAID",
+								"OVERDUE",
+							],
+						},
+					},
+					{ name: "batchId", in: "query", schema: { type: "string" } },
+					{
+						name: "country",
+						in: "query",
+						schema: { type: "string", enum: ["CH", "KR", "TH", "JP", "INA"] },
+					},
+					{
+						name: "page",
+						in: "query",
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						schema: { type: "integer", default: 20, maximum: 100 },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar invoice" },
+				},
+			},
+		},
+		"/api/v1/admin/invoices/{id}": {
+			get: {
+				tags: ["Admin - Invoices"],
+				summary: "Detail Invoice Batch",
+				description:
+					"Rincian item, data buyer, riwayat pembayaran & verifikasi, denda berjalan, dan info pembebasan denda.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil detail invoice" },
+					"404": { description: "Invoice tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/invoices/{id}/waive-penalty": {
+			patch: {
+				tags: ["Admin - Invoices"],
+				summary: "Bebaskan Denda Invoice (Khusus OWNER)",
+				description:
+					"Membebaskan denda keterlambatan dengan alasan wajib. Menyimpan admin, waktu, dan alasan. Tidak bisa untuk invoice yang sudah PAID atau sudah pernah di-waive.",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["reason"],
+								properties: {
+									reason: { type: "string", minLength: 5, maxLength: 500 },
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Denda berhasil dibebaskan" },
+					"403": { description: "Hanya OWNER" },
+					"404": { description: "Invoice tidak ditemukan" },
+					"409": { description: "Invoice sudah lunas / sudah di-waive" },
 				},
 			},
 		},
