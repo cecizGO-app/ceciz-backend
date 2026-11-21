@@ -10,6 +10,7 @@ import { notFound } from "@/middleware/notFound";
 import { batchesRouter as adminBatchesRouter } from "@/modules/admin/batches/batches.routes";
 import { invoicesRouter as adminInvoicesRouter } from "@/modules/admin/invoices/invoices.routes";
 import { paymentsRouter as adminPaymentsRouter } from "@/modules/admin/payments/payments.routes";
+import { poAlbumsRouter as adminPoAlbumsRouter } from "@/modules/admin/po-albums/po-albums.routes";
 import { taxRouter as adminTaxRouter } from "@/modules/admin/tax/tax.routes";
 import { trackingRouter as adminTrackingRouter } from "@/modules/admin/tracking/tracking.routes";
 import { batchesRouter as buyerBatchesRouter } from "@/modules/buyer/batches/batches.routes";
@@ -70,6 +71,7 @@ app.use(express.json());
 app.use(adminBatchesRouter);
 app.use(adminInvoicesRouter);
 app.use(adminPaymentsRouter);
+app.use(adminPoAlbumsRouter);
 app.use(adminTrackingRouter);
 app.use(adminTaxRouter);
 

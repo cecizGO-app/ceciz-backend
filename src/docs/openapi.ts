@@ -45,6 +45,11 @@ export const openApiSpec = {
 				"Operasi penagihan pajak (Bea Cukai) multi-batch, rilis periodik, preview item WH INA, dan verifikasi bukti bayar pajak (Khusus role OWNER & STAFF)",
 		},
 		{
+			name: "Admin - PO Albums",
+			description:
+				"Pengelolaan pesanan PO Album / CO Web dengan skema DP+FP dan status checkout web (Khusus role OWNER & STAFF)",
+		},
+		{
 			name: "Storage & Upload",
 			description: "Unggah file dan gambar ke Cloudflare R2 storage",
 		},
@@ -1521,6 +1526,175 @@ export const openApiSpec = {
 					"403": { description: "Hanya OWNER" },
 					"404": { description: "Invoice tidak ditemukan" },
 					"409": { description: "Invoice sudah lunas / sudah di-waive" },
+				},
+			},
+		},
+		"/api/v1/admin/po-albums/stats": {
+			get: {
+				tags: ["Admin - PO Albums"],
+				summary: "Statistik PO Album / CO Web (4 Kartu)",
+				description:
+					"Mengambil metrik ringkasan: total order album + batch aktif, jumlah buyer menunggu pelunasan FP, jumlah batch CO Web Open, dan total terkumpul DP+FP bulan berjalan.",
+				security: [{ cookieAuth: [] }],
+				responses: {
+					"200": { description: "Berhasil mengambil statistik PO Album" },
+				},
+			},
+		},
+		"/api/v1/admin/po-albums": {
+			get: {
+				tags: ["Admin - PO Albums"],
+				summary: "Daftar Pesanan PO Album / CO Web",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{ name: "search", in: "query", schema: { type: "string" } },
+					{
+						name: "paymentStatus",
+						in: "query",
+						schema: {
+							type: "string",
+							enum: ["ALL", "DP_PENDING", "AWAITING_FP", "PAID"],
+						},
+					},
+					{
+						name: "coStatus",
+						in: "query",
+						schema: {
+							type: "string",
+							enum: [
+								"ALL",
+								"NOT_STARTED",
+								"CO_OPEN",
+								"ORDER_SUBMITTED",
+								"COMPLETED",
+							],
+						},
+					},
+					{
+						name: "orderType",
+						in: "query",
+						schema: { type: "string", enum: ["ALL", "PO_ALBUM", "CO_WEB"] },
+					},
+					{
+						name: "country",
+						in: "query",
+						schema: { type: "string", enum: ["CH", "KR", "TH", "JP", "INA"] },
+					},
+					{
+						name: "page",
+						in: "query",
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						schema: { type: "integer", default: 20, maximum: 100 },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar PO Album" },
+				},
+			},
+			post: {
+				tags: ["Admin - PO Albums"],
+				summary: "Input Bulk PO Album / CO Web",
+				description:
+					"Menyimpan banyak baris pesanan sekaligus untuk 1 batch & item judul album dengan skema DP & FP.",
+				security: [{ cookieAuth: [] }],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["batchNumber", "itemName", "items"],
+								properties: {
+									batchNumber: { type: "string", example: "KR-ALB-07" },
+									itemName: { type: "string", example: "CATBBI Album Ver." },
+									orderType: {
+										type: "string",
+										enum: ["PO_ALBUM", "CO_WEB"],
+										default: "PO_ALBUM",
+									},
+									items: {
+										type: "array",
+										items: {
+											type: "object",
+											required: ["buyerId", "harga", "dpAmount"],
+											properties: {
+												buyerId: { type: "string", example: "@username" },
+												memberName: { type: "string", example: "Shotaro" },
+												qty: { type: "integer", default: 1 },
+												harga: { type: "number", example: 305000 },
+												dpAmount: { type: "number", example: 205000 },
+												dpPaid: { type: "boolean", default: false },
+												fpAmount: { type: "number", example: 100000 },
+												fpPaid: { type: "boolean", default: false },
+												notes: { type: "string", example: "titip sealed" },
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"201": { description: "Pesanan PO Album berhasil disimpan" },
+					"400": { description: "Validasi gagal" },
+				},
+			},
+		},
+		"/api/v1/admin/po-albums/{id}": {
+			get: {
+				tags: ["Admin - PO Albums"],
+				summary: "Detail Pesanan PO Album",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil detail PO Album" },
+					"404": { description: "Tidak ditemukan" },
+				},
+			},
+			patch: {
+				tags: ["Admin - PO Albums"],
+				summary: "Update Pesanan PO Album (DP/FP/Status CO)",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: {
+					"200": { description: "Pesanan PO Album berhasil diperbarui" },
+					"404": { description: "Tidak ditemukan" },
+				},
+			},
+			delete: {
+				tags: ["Admin - PO Albums"],
+				summary: "Hapus Pesanan PO Album",
+				security: [{ cookieAuth: [] }],
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				responses: {
+					"200": { description: "Pesanan PO Album berhasil dihapus" },
+					"404": { description: "Tidak ditemukan" },
 				},
 			},
 		},

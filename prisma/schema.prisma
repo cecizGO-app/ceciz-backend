@@ -97,6 +97,18 @@ enum CashflowType {
   EXPENSE
 }
 
+enum PoOrderType {
+  PO_ALBUM
+  CO_WEB
+}
+
+enum PoCoStatus {
+  NOT_STARTED
+  CO_OPEN
+  ORDER_SUBMITTED
+  COMPLETED
+}
+
 // ==========================================
 // AUTHENTICATION MODELS (Better Auth)
 // ==========================================
@@ -435,14 +447,19 @@ model PoAlbum {
   buyer          User           @relation(fields: [buyerId], references: [id], onDelete: Cascade)
   batchNumber    String
   itemName       String
+  orderType      PoOrderType    @default(PO_ALBUM)
+  memberName     String?
   qty            Int            @default(1)
   totalQty       Int?
   harga          Decimal        @db.Decimal(14, 2)
   totalHarga     Decimal        @db.Decimal(14, 2)
   dpAmount       Decimal        @db.Decimal(14, 2)
-  dpMethod       PaymentMethod
+  dpMethod       PaymentMethod?
+  dpPaid         Boolean        @default(false)
   fpAmount       Decimal?       @db.Decimal(14, 2)
   fpMethod       PaymentMethod?
+  fpPaid         Boolean        @default(false)
+  coStatus       PoCoStatus     @default(NOT_STARTED)
   trackingStatus TrackingStatus @default(PO)
   notes          String?
 
@@ -450,6 +467,7 @@ model PoAlbum {
   updatedAt      DateTime       @updatedAt
 
   @@index([buyerId])
+  @@index([batchNumber])
   @@map("po_album")
 }
 
