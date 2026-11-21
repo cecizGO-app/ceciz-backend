@@ -203,23 +203,29 @@ export async function deleteStaffAccount(id: string, currentUserId?: string) {
 // ==========================================
 
 export async function getRolePermissions() {
-	await Promise.all(
-		DEFAULT_ROLE_MATRICES.map((m) =>
-			prisma.rolePermission.upsert({
-				where: { roleKey: m.roleKey },
-				update: {},
-				create: {
-					roleKey: m.roleKey,
-					label: m.label,
-					permissions: m.permissions as Prisma.InputJsonValue,
-				},
-			}),
-		),
-	);
-
-	const existing = await prisma.rolePermission.findMany({
+	let existing = await prisma.rolePermission.findMany({
 		orderBy: { createdAt: "asc" },
 	});
+
+	if (existing.length === 0) {
+		await Promise.all(
+			DEFAULT_ROLE_MATRICES.map((m) =>
+				prisma.rolePermission.upsert({
+					where: { roleKey: m.roleKey },
+					update: {},
+					create: {
+						roleKey: m.roleKey,
+						label: m.label,
+						permissions: m.permissions as Prisma.InputJsonValue,
+					},
+				}),
+			),
+		);
+
+		existing = await prisma.rolePermission.findMany({
+			orderBy: { createdAt: "asc" },
+		});
+	}
 
 	return existing.map((r) => ({
 		roleKey: r.roleKey,
