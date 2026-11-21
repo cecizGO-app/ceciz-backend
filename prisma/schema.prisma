@@ -276,6 +276,12 @@ model Invoice {
   deadlinePayment DateTime
   penaltyAmount   Decimal       @default(0) @db.Decimal(14, 2)
 
+  // Waive Penalty (pembebasan denda oleh admin)
+  penaltyWaived       Boolean   @default(false)
+  penaltyWaivedReason String?
+  penaltyWaivedAt     DateTime?
+  penaltyWaivedById   String?
+
   payments        Payment[]
 
   createdAt       DateTime      @default(now())
