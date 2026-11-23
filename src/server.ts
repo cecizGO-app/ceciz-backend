@@ -10,6 +10,7 @@ import { notFound } from "@/middleware/notFound";
 import { batchesRouter as adminBatchesRouter } from "@/modules/admin/batches/batches.routes";
 import { buyerApprovalsRouter as adminBuyerApprovalsRouter } from "@/modules/admin/buyer-approvals/buyer-approvals.routes";
 import { cashflowRouter as adminCashflowRouter } from "@/modules/admin/cashflow/cashflow.routes";
+import { dashboardRouter as adminDashboardRouter } from "@/modules/admin/dashboard/dashboard.routes";
 import { invoicesRouter as adminInvoicesRouter } from "@/modules/admin/invoices/invoices.routes";
 import { paymentsRouter as adminPaymentsRouter } from "@/modules/admin/payments/payments.routes";
 import { poAlbumsRouter as adminPoAlbumsRouter } from "@/modules/admin/po-albums/po-albums.routes";
@@ -75,6 +76,7 @@ app.use(express.json());
 // Admin Routes
 app.use(adminBatchesRouter);
 app.use(adminBuyerApprovalsRouter);
+app.use(adminDashboardRouter);
 app.use(adminCashflowRouter);
 app.use(adminInvoicesRouter);
 app.use(adminPaymentsRouter);
