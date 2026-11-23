@@ -48,7 +48,7 @@ export async function getRecentActivities(
 			orderBy: { updatedAt: "desc" },
 			select: {
 				id: true,
-				currentStatus: true,
+				trackingStatus: true,
 				updatedAt: true,
 				batch: {
 					select: {
@@ -97,7 +97,7 @@ export async function getRecentActivities(
 		}),
 		...trackings.map((t) => {
 			const statusLabel =
-				TRACKING_LABELS[t.currentStatus] ?? String(t.currentStatus);
+				TRACKING_LABELS[t.trackingStatus] ?? String(t.trackingStatus);
 			const batchCode = formatBatchCode(
 				t.batch.countryCode,
 				t.batch.batchNumber,

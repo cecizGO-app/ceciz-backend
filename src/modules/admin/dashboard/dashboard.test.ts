@@ -36,7 +36,7 @@ describe("Admin Dashboard Service - Recent Activities", () => {
 		vi.mocked(prisma.tracking.findMany).mockResolvedValueOnce([
 			{
 				id: "trk-1",
-				currentStatus: TrackingStatus.OTW_INA,
+				trackingStatus: TrackingStatus.OTW_INA,
 				updatedAt: t2,
 				batch: {
 					countryCode: "CH",
