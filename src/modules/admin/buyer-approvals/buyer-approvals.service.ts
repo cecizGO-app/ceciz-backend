@@ -144,6 +144,7 @@ export async function verifyBuyerApproval(
 		throw AppError.notFound("Akun buyer tidak ditemukan");
 	}
 
+	const isApproved = input.status === VerificationStatus.APPROVED;
 	const isRejected = input.status === VerificationStatus.REJECTED;
 
 	const updated = await prisma.user.update({
@@ -151,8 +152,8 @@ export async function verifyBuyerApproval(
 		data: {
 			approvalStatus: input.status,
 			approvalRejectReason: isRejected ? (input.rejectReason ?? null) : null,
-			approvedAt: new Date(),
-			approvedBy: adminId ?? null,
+			approvedAt: isApproved ? new Date() : null,
+			approvedBy: isApproved ? (adminId ?? null) : null,
 		},
 		select: buyerApprovalSelect,
 	});
@@ -167,6 +168,7 @@ export async function bulkVerifyBuyerApprovals(
 	input: BulkVerifyBuyerApprovalsInput,
 	adminId?: string,
 ) {
+	const isApproved = input.status === VerificationStatus.APPROVED;
 	const isRejected = input.status === VerificationStatus.REJECTED;
 
 	const result = await prisma.user.updateMany({
@@ -177,8 +179,8 @@ export async function bulkVerifyBuyerApprovals(
 		data: {
 			approvalStatus: input.status,
 			approvalRejectReason: isRejected ? (input.rejectReason ?? null) : null,
-			approvedAt: new Date(),
-			approvedBy: adminId ?? null,
+			approvedAt: isApproved ? new Date() : null,
+			approvedBy: isApproved ? (adminId ?? null) : null,
 		},
 	});
 

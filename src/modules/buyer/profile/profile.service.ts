@@ -34,11 +34,10 @@ export async function updateProfile(buyerId: string, data: UpdateProfileInput) {
 	});
 
 	const hasVerificationUpdate =
-		data.name !== undefined ||
-		data.idLine !== undefined ||
-		data.lineGroup !== undefined;
+		data.idLine !== undefined || data.lineGroup !== undefined;
 	const shouldResubmit =
-		existing.approvalStatus === VerificationStatus.REJECTED &&
+		(existing.approvalStatus === VerificationStatus.REJECTED ||
+			existing.approvalStatus === VerificationStatus.APPROVED) &&
 		hasVerificationUpdate;
 
 	return prisma.user.update({
