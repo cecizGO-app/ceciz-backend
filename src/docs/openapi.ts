@@ -30,6 +30,11 @@ export const openApiSpec = {
 				"Persetujuan akun buyer berdasarkan verifikasi keanggotaan grup LINE Ceciz (GO 1 / GO 2) (Khusus role OWNER & STAFF)",
 		},
 		{
+			name: "Admin - Dashboard",
+			description:
+				"Log aktivitas tim terbaru untuk dashboard admin (Khusus role OWNER & STAFF)",
+		},
+		{
 			name: "Admin - Tracking",
 			description:
 				"Operasi status tracking dan logistik batch (Khusus role OWNER & STAFF)",
@@ -3173,6 +3178,27 @@ export const openApiSpec = {
 				responses: {
 					"200": { description: "Bulk verifikasi akun buyer berhasil" },
 					"404": { description: "Tidak ada akun buyer yang ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/dashboard/activities": {
+			get: {
+				tags: ["Admin - Dashboard"],
+				summary: "Log aktivitas tim terbaru",
+				description:
+					"Mengambil aktivitas terbaru (upload bukti bayar, update status tracking, pembuatan batch, rilis tagihan tax) untuk widget Aktivitas Tim Terbaru di dashboard admin.",
+				parameters: [
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 10, maximum: 50 },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil log aktivitas terbaru" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
 				},
 			},
 		},
