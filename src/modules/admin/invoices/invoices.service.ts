@@ -508,6 +508,9 @@ export async function generateInvoices(input: GenerateInvoicesInput) {
 							data: {
 								totalAmount: draft.totalAmount,
 								itemDetail: itemDetailJson,
+								...(input.deadlinePayment !== undefined && {
+									deadlinePayment: input.deadlinePayment,
+								}),
 							},
 						});
 

@@ -2,9 +2,6 @@ import type { Prisma } from "@/generated/prisma/client";
 import {
 	BatchStatus,
 	CountryCode,
-	InvoiceStatus,
-	NotificationChannel,
-	NotificationType,
 	OrderStatus,
 	Role,
 	TrackingStatus,
@@ -267,30 +264,17 @@ async function ensureBuyersExist(
 	}
 }
 
-async function syncOrdersAndInvoicesForBatch(
+async function syncOrdersForBatch(
 	tx: Prisma.TransactionClient,
 	batch: {
 		id: string;
-		title: string;
-		countryCode: CountryCode;
 	},
 	items: Array<{
 		buyerId: string;
-		description: string;
 		pcs: number;
-		hargaPerBuyer: number | null;
-		hargaJualPerBuyer: number | null;
 	}>,
 ) {
 	if (items.length === 0) return;
-
-	const settings = await tx.setting.findUnique({
-		where: { id: "singleton" },
-		select: { deadlineBatchHours: true },
-	});
-	const deadlineHours = settings?.deadlineBatchHours ?? 24;
-	const deadlinePayment = new Date(Date.now() + deadlineHours * 60 * 60 * 1000);
-	const isJp = batch.countryCode === CountryCode.JP;
 
 	// Group items by buyerId
 	const itemsByBuyer = new Map<string, typeof items>();
@@ -302,20 +286,6 @@ async function syncOrdersAndInvoicesForBatch(
 
 	for (const [buyerId, buyerItems] of itemsByBuyer.entries()) {
 		const totalQty = buyerItems.reduce((sum, i) => sum + (i.pcs || 1), 0);
-		const totalAmount = buyerItems.reduce((sum, i) => {
-			const unitPrice = isJp
-				? Number(i.hargaJualPerBuyer ?? i.hargaPerBuyer ?? 0)
-				: Number(i.hargaPerBuyer ?? 0);
-			return sum + unitPrice * (i.pcs || 1);
-		}, 0);
-
-		const itemDetail = buyerItems.map((i) => ({
-			item_name: i.description,
-			qty: i.pcs || 1,
-			harga_per_buyer: isJp
-				? Number(i.hargaJualPerBuyer ?? i.hargaPerBuyer ?? 0)
-				: Number(i.hargaPerBuyer ?? 0),
-		}));
 
 		const existingOrder = await tx.order.findFirst({
 			where: { batchId: batch.id, buyerId },
@@ -333,51 +303,6 @@ async function syncOrdersAndInvoicesForBatch(
 					buyerId,
 					itemQty: totalQty,
 					orderStatus: OrderStatus.CONFIRMED,
-				},
-			});
-		}
-
-		const existingInvoice = await tx.invoice.findFirst({
-			where: { batchId: batch.id, buyerId },
-			include: {
-				payments: {
-					where: { verificationStatus: "APPROVED" },
-					select: { id: true },
-				},
-			},
-		});
-
-		if (existingInvoice) {
-			if (existingInvoice.payments.length === 0) {
-				await tx.invoice.update({
-					where: { id: existingInvoice.id },
-					data: {
-						totalAmount,
-						itemDetail,
-					},
-				});
-			}
-		} else {
-			const invoice = await tx.invoice.create({
-				data: {
-					buyerId,
-					batchId: batch.id,
-					totalAmount,
-					itemDetail,
-					invoiceStatus: InvoiceStatus.UNPAID,
-					deadlinePayment,
-				},
-			});
-
-			await tx.notification.create({
-				data: {
-					buyerId,
-					channel: NotificationChannel.IN_APP,
-					type: NotificationType.INVOICE_NEW,
-					title: "Invoice Baru",
-					body: `Tagihan batch ${batch.title} sebesar Rp ${totalAmount.toLocaleString("id-ID")} telah dibuat.`,
-					triggeredByEvent: "BATCH_CREATED",
-					referenceId: invoice.id,
 				},
 			});
 		}
@@ -488,7 +413,7 @@ export async function createBatch(input: CreateBatchInput) {
 		});
 
 		if (computedItems.length > 0) {
-			await syncOrdersAndInvoicesForBatch(tx, newBatch, computedItems);
+			await syncOrdersForBatch(tx, newBatch, computedItems);
 		}
 
 		return newBatch;
@@ -695,7 +620,7 @@ export async function updateBatch(id: string, input: UpdateBatchInput) {
 		});
 
 		if (computedFields && computedFields.computedItems.length > 0) {
-			await syncOrdersAndInvoicesForBatch(
+			await syncOrdersForBatch(
 				tx,
 				updatedBatch,
 				computedFields.computedItems,

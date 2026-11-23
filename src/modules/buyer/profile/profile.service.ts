@@ -30,11 +30,19 @@ export async function getProfile(buyerId: string) {
 export async function updateProfile(buyerId: string, data: UpdateProfileInput) {
 	const existing = await prisma.user.findUniqueOrThrow({
 		where: { id: buyerId },
-		select: { approvalStatus: true, approvalSubmittedAt: true },
+		select: {
+			approvalStatus: true,
+			approvalSubmittedAt: true,
+			idLine: true,
+			lineGroup: true,
+		},
 	});
 
-	const hasVerificationUpdate =
-		data.idLine !== undefined || data.lineGroup !== undefined;
+	const idLineChanged =
+		data.idLine !== undefined && data.idLine !== existing.idLine;
+	const lineGroupChanged =
+		data.lineGroup !== undefined && data.lineGroup !== existing.lineGroup;
+	const hasVerificationUpdate = idLineChanged || lineGroupChanged;
 	const shouldResubmit =
 		(existing.approvalStatus === VerificationStatus.REJECTED ||
 			existing.approvalStatus === VerificationStatus.APPROVED) &&

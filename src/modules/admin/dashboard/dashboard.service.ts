@@ -1,4 +1,4 @@
-import { TrackingStatus } from "@/generated/prisma/enums";
+import { TrackingStatus, VerificationStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 
 export type ActivityType = "PAYMENT" | "TRACKING" | "BATCH" | "TAX";
@@ -28,21 +28,44 @@ function formatBatchCode(countryCode: string, batchNumber: number) {
 export async function getRecentActivities(
 	limit = 10,
 ): Promise<ActivityLogItem[]> {
-	const [payments, trackings, batches, taxInvoices] = await Promise.all([
-		prisma.payment.findMany({
-			take: limit,
-			orderBy: { createdAt: "desc" },
-			select: {
-				id: true,
-				createdAt: true,
-				buyer: { select: { name: true } },
-				invoice: {
-					select: {
-						batch: { select: { countryCode: true, batchNumber: true } },
+	const [payments, verifiedPayments, trackings, batches, taxInvoices] =
+		await Promise.all([
+			prisma.payment.findMany({
+				take: limit,
+				orderBy: { createdAt: "desc" },
+				select: {
+					id: true,
+					createdAt: true,
+					buyer: { select: { name: true } },
+					invoice: {
+						select: {
+							batch: { select: { countryCode: true, batchNumber: true } },
+						},
 					},
 				},
-			},
-		}),
+			}),
+			prisma.payment.findMany({
+				take: limit,
+				where: {
+					verificationStatus: {
+						in: [VerificationStatus.APPROVED, VerificationStatus.REJECTED],
+					},
+					verifiedAt: { not: null },
+				},
+				orderBy: { verifiedAt: "desc" },
+				select: {
+					id: true,
+					verificationStatus: true,
+					verifiedAt: true,
+					buyer: { select: { name: true } },
+					verifiedBy: { select: { name: true } },
+					invoice: {
+						select: {
+							batch: { select: { countryCode: true, batchNumber: true } },
+						},
+					},
+				},
+			}),
 		prisma.tracking.findMany({
 			take: limit,
 			orderBy: { updatedAt: "desc" },
@@ -93,6 +116,22 @@ export async function getRecentActivities(
 				title: "Bukti bayar diupload",
 				actor: `${p.buyer.name}${batchCode}`,
 				createdAt: p.createdAt,
+			};
+		}),
+		...(verifiedPayments ?? []).map((p) => {
+			const batch = p.invoice?.batch;
+			const batchCode = batch
+				? ` (${formatBatchCode(batch.countryCode, batch.batchNumber)})`
+				: "";
+			const isApproved = p.verificationStatus === VerificationStatus.APPROVED;
+			return {
+				id: `payment-verify-${p.id}`,
+				type: "PAYMENT" as const,
+				title: isApproved
+					? `Pembayaran disetujui: ${p.buyer.name}${batchCode}`
+					: `Pembayaran ditolak: ${p.buyer.name}${batchCode}`,
+				actor: p.verifiedBy?.name ?? "Admin",
+				createdAt: p.verifiedAt as Date,
 			};
 		}),
 		...trackings.map((t) => {
