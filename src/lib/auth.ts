@@ -63,6 +63,16 @@ export const auth = betterAuth({
 				type: "string",
 				required: false,
 			},
+			lineGroup: {
+				type: ["GO_1", "GO_2"] as const,
+				required: false,
+			},
+			approvalStatus: {
+				type: ["PENDING", "APPROVED", "REJECTED"] as const,
+				required: false,
+				defaultValue: "PENDING",
+				input: false,
+			},
 		},
 	},
 	socialProviders: {

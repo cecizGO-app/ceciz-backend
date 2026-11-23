@@ -25,6 +25,11 @@ export const openApiSpec = {
 			description: "Operasi CRUD batch pesanan (Khusus role OWNER & STAFF)",
 		},
 		{
+			name: "Admin - Buyer Approvals",
+			description:
+				"Persetujuan akun buyer berdasarkan verifikasi keanggotaan grup LINE Ceciz (GO 1 / GO 2) (Khusus role OWNER & STAFF)",
+		},
+		{
 			name: "Admin - Tracking",
 			description:
 				"Operasi status tracking dan logistik batch (Khusus role OWNER & STAFF)",
@@ -641,6 +646,12 @@ export const openApiSpec = {
 						type: "string",
 						description: "ID LINE pembeli",
 						example: "yudha_line",
+					},
+					lineGroup: {
+						type: "string",
+						enum: ["GO_1", "GO_2"],
+						description: "Grup LINE Ceciz pembeli (GO_1 atau GO_2)",
+						example: "GO_1",
 					},
 					address: {
 						type: "string",
@@ -3041,6 +3052,127 @@ export const openApiSpec = {
 					"Mengambil daftar FAQ seputar cara order, pembayaran, tracking, tagihan pajak, dan checkout Shopee.",
 				responses: {
 					"200": { description: "Berhasil mengambil daftar FAQ" },
+				},
+			},
+		},
+		"/api/v1/admin/buyer-approvals/stats": {
+			get: {
+				tags: ["Admin - Buyer Approvals"],
+				summary: "Ringkasan statistik persetujuan akun buyer",
+				description:
+					"Mengambil jumlah menunggu persetujuan, akun disetujui, pengajuan ditolak, total member aktif GO 1 & GO 2, serta tab counts.",
+				responses: {
+					"200": {
+						description: "Berhasil mengambil statistik persetujuan buyer",
+					},
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/admin/buyer-approvals": {
+			get: {
+				tags: ["Admin - Buyer Approvals"],
+				summary: "Daftar pengajuan persetujuan akun buyer",
+				description:
+					"Mengambil daftar akun buyer dengan filter status (PENDING/APPROVED/REJECTED), filter grup LINE (GO_1/GO_2), pencarian (DN LINE, ID LINE, email), dan pagination.",
+				parameters: [
+					{
+						name: "status",
+						in: "query",
+						required: false,
+						schema: { $ref: "#/components/schemas/VerificationStatus" },
+					},
+					{
+						name: "lineGroup",
+						in: "query",
+						required: false,
+						schema: { type: "string", enum: ["GO_1", "GO_2"] },
+					},
+					{
+						name: "search",
+						in: "query",
+						required: false,
+						schema: { type: "string" },
+					},
+					{
+						name: "page",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 1 },
+					},
+					{
+						name: "limit",
+						in: "query",
+						required: false,
+						schema: { type: "integer", default: 20 },
+					},
+				],
+				responses: {
+					"200": { description: "Berhasil mengambil daftar buyer approvals" },
+					"401": { description: "Unauthorized" },
+					"403": { description: "Forbidden" },
+				},
+			},
+		},
+		"/api/v1/admin/buyer-approvals/{id}/verify": {
+			patch: {
+				tags: ["Admin - Buyer Approvals"],
+				summary: "Setujui atau tolak akun buyer",
+				parameters: [
+					{
+						name: "id",
+						in: "path",
+						required: true,
+						schema: { type: "string" },
+					},
+				],
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["status"],
+								properties: {
+									status: { type: "string", enum: ["APPROVED", "REJECTED"] },
+									rejectReason: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": {
+						description: "Status persetujuan akun buyer berhasil diperbarui",
+					},
+					"404": { description: "Akun buyer tidak ditemukan" },
+				},
+			},
+		},
+		"/api/v1/admin/buyer-approvals/bulk-verify": {
+			post: {
+				tags: ["Admin - Buyer Approvals"],
+				summary: "Setujui atau tolak banyak akun buyer sekaligus",
+				requestBody: {
+					required: true,
+					content: {
+						"application/json": {
+							schema: {
+								type: "object",
+								required: ["buyerIds", "status"],
+								properties: {
+									buyerIds: { type: "array", items: { type: "string" } },
+									status: { type: "string", enum: ["APPROVED", "REJECTED"] },
+									rejectReason: { type: "string" },
+								},
+							},
+						},
+					},
+				},
+				responses: {
+					"200": { description: "Bulk verifikasi akun buyer berhasil" },
+					"404": { description: "Tidak ada akun buyer yang ditemukan" },
 				},
 			},
 		},

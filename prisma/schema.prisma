@@ -58,6 +58,11 @@ enum VerificationStatus {
   REJECTED
 }
 
+enum LineGroup {
+  GO_1
+  GO_2
+}
+
 enum TrackingStatus {
   PO
   ON_SELLER_HAND
@@ -121,11 +126,17 @@ model User {
   image         String?
   role          Role      @default(BUYER)
   staffTitle    String?
-  contact       String?
-  address       String?
-  idLine        String?
-  isOnboarded   Boolean   @default(false)
-  isActive      Boolean   @default(true)
+  contact              String?
+  address              String?
+  idLine               String?
+  lineGroup            LineGroup?
+  approvalStatus       VerificationStatus @default(PENDING)
+  approvalRejectReason String?
+  approvalSubmittedAt  DateTime?
+  approvedAt           DateTime?
+  approvedBy           String?
+  isOnboarded          Boolean            @default(false)
+  isActive             Boolean            @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
