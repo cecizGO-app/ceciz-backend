@@ -54,6 +54,7 @@ export function calculateTieredFeeRekap(totalPcs: number): number {
 function computeBatchCalculations(params: {
 	countryCode: CountryCode;
 	rateHarian?: number | null | undefined;
+	rateSeller?: number | null | undefined;
 	shippingFee?: number | null | undefined;
 	feeWh?: number | null | undefined;
 	feeProxy?: number | null | undefined;
@@ -65,6 +66,7 @@ function computeBatchCalculations(params: {
 	const {
 		countryCode,
 		rateHarian,
+		rateSeller,
 		shippingFee,
 		feeWh,
 		feeProxy,
@@ -82,6 +84,10 @@ function computeBatchCalculations(params: {
 		countryCode === CountryCode.INA
 			? 1
 			: (rateHarian ?? DEFAULT_DAILY_RATE[countryCode] ?? 1);
+	const sellerRate =
+		countryCode === CountryCode.INA
+			? 1
+			: (rateSeller ?? rateHarian ?? DEFAULT_DAILY_RATE[countryCode] ?? 1);
 
 	// Khusus Korea (KR): format input harga dibagi 10.000 (misal 0.2 = 2.000 Won)
 	const krMultiplier = countryCode === CountryCode.KR ? 10000 : 1;
@@ -91,8 +97,8 @@ function computeBatchCalculations(params: {
 		0,
 	);
 
-	// 1. Konversi Barang & Ongkir ke IDR
-	const baseIdr = totalHargaAsli * krMultiplier * rate;
+	// 1. Konversi Barang & Ongkir ke IDR (dengan sellerRate untuk modal TF Seller)
+	const baseSellerIdr = totalHargaAsli * krMultiplier * sellerRate;
 	const whAndProxyIdr = (feeWh ?? 0) + (feeProxy ?? 0);
 
 	// Untuk INA, shippingFee / feeWh / feeProxy merepresentasikan "Harga CO Shopee dari Seller"
@@ -100,9 +106,14 @@ function computeBatchCalculations(params: {
 		countryCode === CountryCode.INA
 			? (shippingFee ?? 0)
 			: (shippingFee ?? 0) * krMultiplier * rate;
+	const shippingSellerIdr =
+		countryCode === CountryCode.INA
+			? (shippingFee ?? 0)
+			: (shippingFee ?? 0) * krMultiplier * sellerRate;
 
 	// 2. Subtotal TF Seller (Modal Riil Keluar)
-	const computedHargaTfSeller = baseIdr + shippingIdr + whAndProxyIdr;
+	const computedHargaTfSeller =
+		baseSellerIdr + shippingSellerIdr + whAndProxyIdr;
 
 	// 3. Perhitungan Harga Bersih per Buyer & Ringkasan Finansial per Negara
 	if (countryCode === CountryCode.JP) {
@@ -337,6 +348,7 @@ export async function createBatch(input: CreateBatchInput) {
 	} = computeBatchCalculations({
 		countryCode: input.countryCode,
 		rateHarian: input.rateHarian,
+		rateSeller: input.rateSeller,
 		shippingFee: input.shippingFee,
 		feeWh: input.feeWh,
 		feeProxy: input.feeProxy,
@@ -472,6 +484,7 @@ export async function updateBatch(id: string, input: UpdateBatchInput) {
 						: existingBatch.rateHarian !== null
 							? Number(existingBatch.rateHarian)
 							: null,
+				rateSeller: input.rateSeller,
 				shippingFee:
 					input.shippingFee !== undefined
 						? input.shippingFee

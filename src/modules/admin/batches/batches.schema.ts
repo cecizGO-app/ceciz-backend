@@ -4,8 +4,16 @@ import { BatchStatus, CountryCode, Role } from "@/generated/prisma/enums";
 export const batchItemInputSchema = z.object({
 	buyerId: z.string().trim().min(1, "Buyer ID wajib diisi"),
 	buyerName: z.string().trim().optional(),
-	description: z.string().trim().min(1, "Nama/Varian merch wajib diisi"),
-	hargaAsli: z.coerce.number().positive("Harga asli harus lebih dari 0"),
+	description: z
+		.string()
+		.trim()
+		.optional()
+		.default("Item")
+		.transform((val) => val || "Item"),
+	hargaAsli: z.coerce
+		.number()
+		.nonnegative("Harga asli tidak boleh negatif")
+		.default(0),
 	pcs: z.coerce.number().int().positive().default(1),
 	feeNyelem: z.coerce.number().nonnegative().nullable().optional(),
 	hargaPerBuyer: z.coerce.number().nonnegative().nullable().optional(),
@@ -13,6 +21,15 @@ export const batchItemInputSchema = z.object({
 });
 
 export type BatchItemInput = z.infer<typeof batchItemInputSchema>;
+
+const optionalPositiveNumber = (message: string) =>
+	z.preprocess(
+		(val) =>
+			val === "" || val === null || val === undefined || Number(val) === 0
+				? null
+				: val,
+		z.coerce.number().positive(message).nullable().optional(),
+	);
 
 export const createBatchSchema = z.object({
 	countryCode: z.enum(["CH", "KR", "TH", "JP", "INA"], {
@@ -39,11 +56,8 @@ export const createBatchSchema = z.object({
 	feeGo: z.coerce.number().nonnegative().default(0),
 	feeRekap: z.coerce.number().nonnegative().default(0),
 	feeNyelem: z.coerce.number().nonnegative().default(0),
-	rateHarian: z.coerce
-		.number()
-		.positive("Rate harian harus bernilai positif")
-		.nullable()
-		.optional(),
+	rateHarian: optionalPositiveNumber("Rate harian harus bernilai positif"),
+	rateSeller: optionalPositiveNumber("Rate seller harus bernilai positif"),
 	feeWh: z.coerce.number().nonnegative().nullable().optional(),
 	feeProxy: z.coerce.number().nonnegative().nullable().optional(),
 	adminNyelemId: z.string().trim().nullable().optional(),
